@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /articles/{articleId} {
+      // Qualquer um pode ler
+      allow read: if true;
+      // Só o admin pode criar, editar e deletar
+      allow write: if request.auth != null && request.auth.token.email == "dev.lucas.rafael@gmail.com";
+    }
+  }
+}
