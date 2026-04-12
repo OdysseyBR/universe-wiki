@@ -4,30 +4,56 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 
-export const CATEGORIES = ['characters', 'locations', 'factions', 'timeline', 'stories']
+export const CATEGORIES = [
+  'characters',
+  'stories',
+  'geography',
+  'cities',
+  'states',
+  'countries',
+  'government',
+  'companies',
+  'infrastructure',
+  'civilizations',
+]
 
 export const CATEGORY_LABELS = {
   characters: 'Personagens',
-  locations: 'Locais',
-  factions: 'Facções',
-  timeline: 'Linha do Tempo',
   stories: 'Histórias',
+  geography: 'Geografia',
+  cities: 'Cidades',
+  states: 'Estados',
+  countries: 'Países',
+  government: 'Governo',
+  companies: 'Empresas',
+  infrastructure: 'Infraestrutura',
+  civilizations: 'Civilizações',
 }
 
 export const CATEGORY_ICONS = {
   characters: '👤',
-  locations: '🗺️',
-  factions: '⚔️',
-  timeline: '📅',
   stories: '📖',
+  geography: '🌍',
+  cities: '🏙️',
+  states: '🗾',
+  countries: '🚩',
+  government: '🏛️',
+  companies: '🏢',
+  infrastructure: '⚙️',
+  civilizations: '🏺',
 }
 
 export const CATEGORY_COLORS = {
   characters: 'amber',
-  locations: 'teal',
-  factions: 'red',
-  timeline: 'blue',
   stories: 'purple',
+  geography: 'teal',
+  cities: 'blue',
+  states: 'green',
+  countries: 'red',
+  government: 'indigo',
+  companies: 'orange',
+  infrastructure: 'gray',
+  civilizations: 'yellow',
 }
 
 export async function createArticle(data) {
