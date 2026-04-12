@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getArticle, deleteArticle, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
-import { Pencil, Trash2, ArrowLeft, Clock } from 'lucide-react'
+import { Pencil, Trash2, ArrowLeft, Clock, Music } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -29,7 +29,8 @@ export default function Article() {
   }
 
   if (loading) return (
-    <div className="animate-pulse space-y-4">
+    <div className="animate-pulse space-y-4 max-w-3xl">
+      <div className="h-56 bg-ink-800 rounded-xl" />
       <div className="h-8 bg-ink-800 rounded w-1/2" />
       <div className="h-4 bg-ink-800 rounded w-1/4" />
       <div className="h-40 bg-ink-800 rounded" />
@@ -56,6 +57,17 @@ export default function Article() {
           {CATEGORY_ICONS[article.category]} {CATEGORY_LABELS[article.category]}
         </Link>
       </div>
+
+      {/* Imagem de capa */}
+      {article.imageUrl && (
+        <div className="mb-8 rounded-2xl overflow-hidden border border-ink-800/60">
+          <img
+            src={article.imageUrl}
+            alt={article.title}
+            className="w-full max-h-72 object-cover"
+          />
+        </div>
+      )}
 
       {/* Header */}
       <div className="mb-8 pb-8 border-b border-ink-800/60">
@@ -99,6 +111,19 @@ export default function Article() {
         className="wiki-content"
         dangerouslySetInnerHTML={{ __html: article.content || '<p class="text-ink-600 italic">Sem conteúdo ainda.</p>' }}
       />
+
+      {/* Player de áudio */}
+      {article.audioUrl && (
+        <div className="mt-10 p-4 card flex items-center gap-4">
+          <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Music size={18} className="text-amber-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-mono text-ink-500 uppercase tracking-wider mb-1.5">Áudio</p>
+            <audio controls src={article.audioUrl} className="w-full" style={{ height: '36px' }} />
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       {article.createdAt?.toDate && (
