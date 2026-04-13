@@ -111,3 +111,8 @@ export async function searchArticles(term) {
     (a.tags || []).some(tag => tag.toLowerCase().includes(t))
   )
 }
+
+export async function getArticleByTitle(title) {
+  const all = await getAllArticles()
+  return all.find(a => a.title?.toLowerCase() === title.toLowerCase()) || null
+}

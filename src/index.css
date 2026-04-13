@@ -60,6 +60,13 @@
     @apply bg-ink-900/80 border border-ink-800/60 rounded-xl backdrop-blur-sm;
   }
 
+  .wiki-link {
+    @apply text-amber-400 underline underline-offset-2 hover:text-amber-300 transition-colors cursor-pointer;
+  }
+  .wiki-link-broken {
+    @apply text-red-400 underline underline-offset-2 decoration-dashed cursor-help;
+  }
+
   .tag {
     @apply text-xs font-mono bg-ink-800 text-ink-400 px-2 py-0.5 rounded-md border border-ink-700/50;
   }

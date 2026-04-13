@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getArticle, deleteArticle, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
+import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
+import { parseWikiLinks } from '../lib/wikilink'
 import { Pencil, Trash2, ArrowLeft, Clock, Music } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -11,12 +12,18 @@ export default function Article() {
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
   const [article, setArticle] = useState(null)
+  const [allArticles, setAllArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [parsedContent, setParsedContent] = useState('')
 
   useEffect(() => {
-    getArticle(id).then(data => {
+    Promise.all([getArticle(id), getAllArticles()]).then(([data, all]) => {
       setArticle(data)
+      setAllArticles(all)
+      if (data?.content) {
+        setParsedContent(parseWikiLinks(data.content, all))
+      }
       setLoading(false)
     })
   }, [id])
@@ -61,11 +68,7 @@ export default function Article() {
       {/* Imagem de capa */}
       {article.imageUrl && (
         <div className="mb-8 rounded-2xl overflow-hidden border border-ink-800/60">
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            className="w-full max-h-72 object-cover"
-          />
+          <img src={article.imageUrl} alt={article.title} className="w-full max-h-72 object-cover" />
         </div>
       )}
 
@@ -106,10 +109,10 @@ export default function Article() {
         </div>
       </div>
 
-      {/* Conteúdo */}
+      {/* Conteúdo com wikilinks */}
       <div
         className="wiki-content"
-        dangerouslySetInnerHTML={{ __html: article.content || '<p class="text-ink-600 italic">Sem conteúdo ainda.</p>' }}
+        dangerouslySetInnerHTML={{ __html: parsedContent || article.content || '<p class="text-ink-600 italic">Sem conteúdo ainda.</p>' }}
       />
 
       {/* Player de áudio */}
