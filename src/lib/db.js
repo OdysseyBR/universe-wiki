@@ -1,60 +1,59 @@
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
-  getDoc, getDocs, query, where, orderBy, serverTimestamp, limit
+  getDoc, getDocs, query, where, orderBy, serverTimestamp, limit, onSnapshot
 } from 'firebase/firestore'
 import { db } from './firebase'
 
-export const CATEGORIES = [
-  'characters',
-  'stories',
-  'geography',
-  'cities',
-  'states',
-  'countries',
-  'government',
-  'companies',
-  'infrastructure',
-  'civilizations',
+// ─── Categorias fixas (fallback) ─────────────────────────────────────────────
+
+export const DEFAULT_CATEGORIES = [
+  { id: 'characters', label: 'Personagens', icon: '👤' },
+  { id: 'stories',    label: 'Histórias',   icon: '📖' },
+  { id: 'geography',  label: 'Geografia',   icon: '🌍' },
+  { id: 'cities',     label: 'Cidades',     icon: '🏙️' },
+  { id: 'states',     label: 'Estados',     icon: '🗾' },
+  { id: 'countries',  label: 'Países',      icon: '🚩' },
+  { id: 'government', label: 'Governo',     icon: '🏛️' },
+  { id: 'companies',  label: 'Empresas',    icon: '🏢' },
+  { id: 'infrastructure', label: 'Infraestrutura', icon: '⚙️' },
+  { id: 'civilizations',  label: 'Civilizações',   icon: '🏺' },
 ]
 
-export const CATEGORY_LABELS = {
-  characters: 'Personagens',
-  stories: 'Histórias',
-  geography: 'Geografia',
-  cities: 'Cidades',
-  states: 'Estados',
-  countries: 'Países',
-  government: 'Governo',
-  companies: 'Empresas',
-  infrastructure: 'Infraestrutura',
-  civilizations: 'Civilizações',
+// Mantidos para compatibilidade com código existente
+export const CATEGORIES        = DEFAULT_CATEGORIES.map(c => c.id)
+export const CATEGORY_LABELS   = Object.fromEntries(DEFAULT_CATEGORIES.map(c => [c.id, c.label]))
+export const CATEGORY_ICONS    = Object.fromEntries(DEFAULT_CATEGORIES.map(c => [c.id, c.icon]))
+
+// ─── Categorias customizadas ──────────────────────────────────────────────────
+
+export async function createCategory(data) {
+  return addDoc(collection(db, 'categories'), {
+    ...data,
+    createdAt: serverTimestamp(),
+  })
 }
 
-export const CATEGORY_ICONS = {
-  characters: '👤',
-  stories: '📖',
-  geography: '🌍',
-  cities: '🏙️',
-  states: '🗾',
-  countries: '🚩',
-  government: '🏛️',
-  companies: '🏢',
-  infrastructure: '⚙️',
-  civilizations: '🏺',
+export async function getCustomCategories() {
+  const snap = await getDocs(query(collection(db, 'categories'), orderBy('createdAt')))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 
-export const CATEGORY_COLORS = {
-  characters: 'amber',
-  stories: 'purple',
-  geography: 'teal',
-  cities: 'blue',
-  states: 'green',
-  countries: 'red',
-  government: 'indigo',
-  companies: 'orange',
-  infrastructure: 'gray',
-  civilizations: 'yellow',
+export async function getAllCategories() {
+  const custom = await getCustomCategories()
+  return [...DEFAULT_CATEGORIES, ...custom]
 }
+
+export function subscribeToCategorias(callback) {
+  return onSnapshot(
+    query(collection(db, 'categories'), orderBy('createdAt')),
+    snap => {
+      const custom = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      callback([...DEFAULT_CATEGORIES, ...custom])
+    }
+  )
+}
+
+// ─── Artigos ──────────────────────────────────────────────────────────────────
 
 export async function createArticle(data) {
   return addDoc(collection(db, 'articles'), {

@@ -1,16 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { CATEGORIES, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
-import {
-  Search, Plus, LogOut, LogIn, Menu, X, BookOpen, User
-} from 'lucide-react'
+import { subscribeToCategorias } from '../lib/db'
+import { Search, Plus, LogOut, LogIn, Menu, X, BookOpen, User } from 'lucide-react'
 
 export default function Layout() {
   const { user, isAdmin, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [categories, setCategories] = useState([])
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const unsub = subscribeToCategorias(setCategories)
+    return () => unsub()
+  }, [])
 
   function handleSearch(e) {
     e.preventDefault()
@@ -23,22 +27,16 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Overlay mobile */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-20 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/60 z-20 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed top-0 left-0 h-full w-64 bg-ink-900 border-r border-ink-800/60 z-30
         transform transition-transform duration-300 flex flex-col
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-auto
       `}>
-        {/* Logo */}
         <div className="p-5 border-b border-ink-800/60">
           <Link to="/" className="flex items-center gap-3" onClick={() => setSidebarOpen(false)}>
             <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -49,38 +47,33 @@ export default function Layout() {
               <div className="font-mono text-xs text-amber-500 leading-tight">Wiki</div>
             </div>
           </Link>
-          <button
-            className="absolute top-4 right-4 text-ink-500 hover:text-ink-300 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
+          <button className="absolute top-4 right-4 text-ink-500 hover:text-ink-300 lg:hidden" onClick={() => setSidebarOpen(false)}>
             <X size={18} />
           </button>
         </div>
 
-        {/* Search */}
         <div className="p-4 border-b border-ink-800/60">
           <form onSubmit={handleSearch}>
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
               <input
                 type="text"
-                placeholder="Buscar..."
+                placeholder="Buscar... ou #tag"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-ink-800/60 border border-ink-700/50 rounded-lg pl-9 pr-3 py-2 text-sm text-ink-200 placeholder-ink-500 focus:outline-none focus:border-amber-500/50 focus:bg-ink-800"
+                className="w-full bg-ink-800/60 border border-ink-700/50 rounded-lg pl-9 pr-3 py-2 text-sm text-ink-200 placeholder-ink-500 focus:outline-none focus:border-amber-500/50"
               />
             </div>
           </form>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 p-4 overflow-y-auto">
           <div className="text-xs font-mono text-ink-600 uppercase tracking-wider mb-3">Categorias</div>
           <ul className="space-y-1">
-            {CATEGORIES.map(cat => (
-              <li key={cat}>
+            {categories.map(cat => (
+              <li key={cat.id}>
                 <NavLink
-                  to={`/category/${cat}`}
+                  to={`/category/${cat.id}`}
                   onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150
@@ -90,22 +83,17 @@ export default function Layout() {
                     }`
                   }
                 >
-                  <span className="text-base">{CATEGORY_ICONS[cat]}</span>
-                  <span>{CATEGORY_LABELS[cat]}</span>
+                  <span className="text-base">{cat.icon}</span>
+                  <span>{cat.label}</span>
                 </NavLink>
               </li>
             ))}
           </ul>
         </nav>
 
-        {/* Footer */}
         <div className="p-4 border-t border-ink-800/60 space-y-2">
           {isAdmin && (
-            <Link
-              to="/new"
-              onClick={() => setSidebarOpen(false)}
-              className="btn-primary w-full justify-center"
-            >
+            <Link to="/new" onClick={() => setSidebarOpen(false)} className="btn-primary w-full justify-center">
               <Plus size={15} />
               Novo artigo
             </Link>
@@ -135,9 +123,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile topbar */}
         <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-ink-800/60 bg-ink-900/80 sticky top-0 z-10 backdrop-blur-sm">
           <button onClick={() => setSidebarOpen(true)} className="text-ink-400 hover:text-ink-200">
             <Menu size={20} />
