@@ -4,44 +4,42 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Playfair Display"', 'serif'],
-        body: ['"IBM Plex Sans"', 'sans-serif'],
+        display: ['"Linux Libertine"', '"Georgia"', 'serif'],
+        body: ['"Linux Libertine"', '"Georgia"', 'serif'],
+        sans: ['"Noto Sans"', '"IBM Plex Sans"', 'sans-serif'],
         mono: ['"IBM Plex Mono"', 'monospace'],
       },
       colors: {
-        ink: {
-          50: '#f4f4f0',
-          100: '#e8e8e0',
-          200: '#d0d0c0',
-          300: '#a8a890',
-          400: '#787860',
-          500: '#585840',
-          600: '#404030',
-          700: '#2c2c20',
-          800: '#1a1a12',
-          900: '#0e0e08',
-          950: '#060604',
-        },
-        amber: {
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-        },
-        red: {
-          400: '#f87171',
-          500: '#ef4444',
-          600: '#dc2626',
+        wiki: {
+          charcoal: '#353535',
+          navy:     '#284B63',
+          teal:     '#3C6E71',
+          red:      '#D02B1C',
+          gold:     '#D4B60E',
+          silver:   '#D9D9D9',
+          white:    '#FFFFFF',
+          // Derivados
+          'navy-light':  '#3a6a8a',
+          'navy-dark':   '#1a3347',
+          'teal-light':  '#4d8a8d',
+          'teal-dark':   '#2a4f51',
+          'bg-main':     '#f8f9fa',
+          'bg-sidebar':  '#f3f4f6',
+          'bg-infobox':  '#eaf1f8',
+          'border':      '#c8ccd1',
+          'border-dark': '#a2a9b1',
+          'text':        '#202122',
+          'text-muted':  '#54595d',
+          'link':        '#284B63',
+          'link-hover':  '#3C6E71',
+          'link-new':    '#D02B1C',
         }
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-in-out',
-        'slide-up': 'slideUp 0.4s ease-out',
-        'pulse-slow': 'pulse 3s ease-in-out infinite',
+        'fade-in': 'fadeIn 0.2s ease-in-out',
       },
       keyframes: {
         fadeIn: { from: { opacity: 0 }, to: { opacity: 1 } },
-        slideUp: { from: { opacity: 0, transform: 'translateY(12px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
       }
     }
   },

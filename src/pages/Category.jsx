@@ -1,88 +1,102 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getArticlesByCategory, CATEGORY_LABELS, CATEGORY_ICONS, CATEGORIES } from '../lib/db'
-import { Plus, ArrowRight } from 'lucide-react'
+import { getArticlesByCategory, getAllCategories, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
+import { Plus, ChevronRight, Clock } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export default function Category() {
   const { cat } = useParams()
   const { isAdmin } = useAuth()
   const [articles, setArticles] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
-
-  if (!CATEGORIES.includes(cat)) return <Navigate to="/" replace />
+  const [catInfo, setCatInfo] = useState(null)
 
   useEffect(() => {
     setLoading(true)
-    getArticlesByCategory(cat).then(data => {
-      setArticles(data)
+    Promise.all([
+      getArticlesByCategory(cat),
+      getAllCategories()
+    ]).then(([arts, cats]) => {
+      setArticles(arts)
+      setCategories(cats)
+      const found = cats.find(c => c.id === cat)
+      setCatInfo(found)
       setLoading(false)
     })
   }, [cat])
 
+  if (!loading && !catInfo) return <Navigate to="/" replace />
+
+  const label = catInfo?.label || cat
+  const icon  = catInfo?.icon || '📄'
+
   return (
-    <div className="animate-slide-up">
-      <div className="flex items-start justify-between gap-4 mb-8">
-        <div>
-          <div className="text-3xl mb-2">{CATEGORY_ICONS[cat]}</div>
-          <h1 className="font-display text-4xl font-bold text-ink-50">{CATEGORY_LABELS[cat]}</h1>
-          <p className="text-ink-500 mt-1">{articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}</p>
-        </div>
+    <div className="animate-fade-in">
+      {/* Breadcrumb */}
+      <div className="border-b border-wiki-border bg-wiki-bg-sidebar px-5 py-2 flex items-center gap-1 text-xs text-wiki-text-muted">
+        <Link to="/" className="wiki-link">Início</Link>
+        <ChevronRight size={11} />
+        <span className="text-wiki-charcoal font-medium">{label}</span>
         {isAdmin && (
-          <Link to={`/new?category=${cat}`} className="btn-primary flex-shrink-0 mt-2">
-            <Plus size={15} />
-            Novo
+          <Link to={`/new?category=${cat}`} className="ml-auto flex items-center gap-1 text-wiki-teal hover:underline font-medium">
+            <Plus size={11} /> Novo artigo
           </Link>
         )}
       </div>
 
-      {loading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="card p-4 animate-pulse">
-              <div className="h-4 bg-ink-800 rounded w-1/4 mb-2" />
-              <div className="h-3 bg-ink-800 rounded w-3/4" />
-            </div>
-          ))}
-        </div>
-      ) : articles.length === 0 ? (
-        <div className="card p-10 text-center">
-          <p className="text-ink-500 mb-4">Nenhum artigo nesta categoria ainda.</p>
-          {isAdmin && (
-            <Link to={`/new?category=${cat}`} className="btn-primary inline-flex">
-              <Plus size={15} />
-              Criar primeiro artigo
-            </Link>
-          )}
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {articles.map(article => (
-            <Link
-              key={article.id}
-              to={`/article/${article.id}`}
-              className="card p-4 flex items-center gap-4 hover:border-ink-700 hover:bg-ink-800/40 transition-all duration-200 group"
-            >
-              <div className="flex-1 min-w-0">
-                <h2 className="font-display font-semibold text-ink-100 group-hover:text-amber-400 transition-colors mb-1">
-                  {article.title}
-                </h2>
-                {article.summary && (
-                  <p className="text-sm text-ink-500 line-clamp-2">{article.summary}</p>
-                )}
-                {article.tags?.length > 0 && (
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {article.tags.map(tag => (
-                      <span key={tag} className="tag">{tag}</span>
-                    ))}
+      <div className="p-5 max-w-4xl">
+        <h1 className="text-2xl font-bold text-wiki-charcoal font-sans pb-2 border-b border-wiki-border mb-4 flex items-center gap-2">
+          <span>{icon}</span> {label}
+        </h1>
+
+        <p className="text-sm text-wiki-text-muted mb-5 italic">
+          {loading ? '...' : `${articles.length} ${articles.length === 1 ? 'artigo' : 'artigos'} nesta categoria`}
+        </p>
+
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => <div key={i} className="h-6 bg-wiki-silver/40 rounded animate-pulse" />)}
+          </div>
+        ) : articles.length === 0 ? (
+          <div className="border border-wiki-border bg-wiki-bg-sidebar p-5 text-sm text-wiki-text-muted italic text-center">
+            Nenhum artigo nesta categoria.{' '}
+            {isAdmin && <Link to={`/new?category=${cat}`} className="wiki-link not-italic">Criar o primeiro →</Link>}
+          </div>
+        ) : (
+          <div className="space-y-0">
+            {articles.map((article, i) => {
+              const date = article.updatedAt?.toDate
+                ? formatDistanceToNow(article.updatedAt.toDate(), { locale: ptBR, addSuffix: true })
+                : ''
+              return (
+                <div key={article.id} className={`flex items-start gap-3 py-3 text-sm ${i !== 0 ? 'border-t border-wiki-border/50' : ''}`}>
+                  <div className="flex-1 min-w-0">
+                    <Link to={`/article/${article.id}`} className="wiki-link font-medium text-base">
+                      {article.title}
+                    </Link>
+                    {article.summary && (
+                      <p className="text-wiki-text-muted text-xs mt-0.5 line-clamp-2">{article.summary}</p>
+                    )}
+                    {article.tags?.length > 0 && (
+                      <div className="flex gap-1.5 mt-1 flex-wrap">
+                        {article.tags.map(tag => (
+                          <span key={tag} className="category-tag">#{tag}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <ArrowRight size={16} className="text-ink-700 group-hover:text-amber-500 flex-shrink-0 transition-colors" />
-            </Link>
-          ))}
-        </div>
-      )}
+                  <span className="text-wiki-text-muted text-xs flex-shrink-0 flex items-center gap-1 mt-0.5">
+                    <Clock size={10} /> {date}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

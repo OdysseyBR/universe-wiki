@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { searchArticles, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
-import { Search, ArrowRight, Loader, Hash } from 'lucide-react'
+import { Search, Loader, ChevronRight } from 'lucide-react'
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -18,20 +18,13 @@ export default function SearchPage() {
     if (!q) return
     setLoading(true)
     setSearched(true)
-
     if (isTagSearch) {
       getAllArticles().then(all => {
-        const filtered = all.filter(a =>
-          (a.tags || []).some(tag => tag.toLowerCase().includes(searchTerm))
-        )
-        setResults(filtered)
+        setResults(all.filter(a => (a.tags || []).some(t => t.toLowerCase().includes(searchTerm))))
         setLoading(false)
       })
     } else {
-      searchArticles(q).then(data => {
-        setResults(data)
-        setLoading(false)
-      })
+      searchArticles(q).then(data => { setResults(data); setLoading(false) })
     }
   }, [q])
 
@@ -41,98 +34,70 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="animate-slide-up max-w-3xl">
-      <h1 className="font-display text-3xl font-bold text-ink-50 mb-2">Buscar</h1>
-      <p className="text-ink-500 text-sm mb-6">
-        Use <span className="font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">#nome</span> para buscar por tag
-      </p>
+    <div className="animate-fade-in">
+      <div className="border-b border-wiki-border bg-wiki-bg-sidebar px-5 py-2 flex items-center gap-1 text-xs text-wiki-text-muted">
+        <Link to="/" className="wiki-link">Início</Link>
+        <ChevronRight size={11} />
+        <span className="text-wiki-charcoal font-medium">Buscar</span>
+      </div>
 
-      <form onSubmit={handleSearch} className="mb-8">
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            {query.startsWith('#')
-              ? <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500" />
-              : <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-500" />
-            }
-            <input
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Buscar artigos... ou #tag"
-              className={`w-full bg-ink-900 border rounded-xl pl-11 pr-4 py-3 text-ink-200 placeholder-ink-600 focus:outline-none transition-colors ${
-                query.startsWith('#')
-                  ? 'border-amber-500/40 focus:border-amber-500/70'
-                  : 'border-ink-700/50 focus:border-amber-500/50'
-              }`}
-              autoFocus
-            />
-          </div>
-          <button type="submit" className="btn-primary px-6">Buscar</button>
-        </div>
-      </form>
+      <div className="p-5 max-w-3xl">
+        <h1 className="text-2xl font-bold text-wiki-charcoal font-sans pb-2 border-b border-wiki-border mb-5">
+          Buscar no wiki
+        </h1>
 
-      {loading && (
-        <div className="flex items-center gap-2 text-ink-500">
-          <Loader size={16} className="animate-spin" />
-          <span className="text-sm">Buscando...</span>
-        </div>
-      )}
+        <form onSubmit={handleSearch} className="flex gap-2 mb-2">
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Buscar artigos... ou #tag"
+            className="flex-1 border border-wiki-border text-sm px-3 py-2 focus:outline-none focus:border-wiki-navy text-wiki-text bg-white rounded"
+            autoFocus
+          />
+          <button type="submit" className="btn-primary px-5">
+            {loading ? <Loader size={14} className="animate-spin" /> : <Search size={14} />}
+            Buscar
+          </button>
+        </form>
 
-      {!loading && searched && (
-        <>
-          <div className="flex items-center gap-2 mb-4">
-            {isTagSearch && (
-              <span className="flex items-center gap-1 text-xs font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-1 rounded-md">
-                <Hash size={11} />
-                {searchTerm}
-              </span>
-            )}
-            <p className="text-sm text-ink-500">
+        <p className="text-xs text-wiki-text-muted mb-5">
+          Use <code className="bg-wiki-silver/40 px-1 rounded">#tag</code> para buscar por tag específica.
+        </p>
+
+        {!loading && searched && (
+          <>
+            <p className="text-sm text-wiki-text-muted mb-3 pb-2 border-b border-wiki-border">
               {results.length === 0
-                ? `Nenhum resultado para "${q}"`
-                : `${results.length} resultado${results.length !== 1 ? 's' : ''}`
+                ? `Nenhum resultado para "${q}".`
+                : `${results.length} resultado${results.length !== 1 ? 's' : ''} para "${q}"`
               }
             </p>
-          </div>
-
-          <div className="space-y-3">
-            {results.map(article => (
-              <Link
-                key={article.id}
-                to={`/article/${article.id}`}
-                className="card p-4 flex items-center gap-4 hover:border-ink-700 hover:bg-ink-800/40 transition-all duration-200 group block"
-              >
-                <span className="text-xl flex-shrink-0">{CATEGORY_ICONS[article.category]}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-display font-semibold text-ink-100 group-hover:text-amber-400 transition-colors">
-                      {article.title}
-                    </h3>
-                    <span className="tag">{CATEGORY_LABELS[article.category]}</span>
+            <div className="space-y-0">
+              {results.map((article, i) => (
+                <div key={article.id} className={`py-3 text-sm ${i !== 0 ? 'border-t border-wiki-border/50' : ''}`}>
+                  <Link to={`/article/${article.id}`} className="wiki-link font-medium text-base">
+                    {article.title}
+                  </Link>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="text-wiki-text-muted text-xs">
+                      {CATEGORY_ICONS[article.category]} {CATEGORY_LABELS[article.category] || article.category}
+                    </span>
+                    {article.tags?.map(tag => (
+                      <span key={tag} className={`category-tag ${isTagSearch && tag.toLowerCase().includes(searchTerm) ? 'bg-wiki-gold/20 border-wiki-gold/40 text-wiki-charcoal' : ''}`}>
+                        #{tag}
+                      </span>
+                    ))}
                   </div>
-                  {article.tags?.length > 0 && (
-                    <div className="flex gap-1.5 flex-wrap mt-1">
-                      {article.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className={`text-xs font-mono px-1.5 py-0.5 rounded ${
-                            isTagSearch && tag.toLowerCase().includes(searchTerm)
-                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                              : 'tag'
-                          }`}
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
+                  {article.summary && (
+                    <p className="text-wiki-text-muted text-xs mt-1 line-clamp-2">{article.summary}</p>
                   )}
                 </div>
-                <ArrowRight size={15} className="text-ink-700 group-hover:text-amber-500 flex-shrink-0 transition-colors" />
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

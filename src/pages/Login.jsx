@@ -25,43 +25,32 @@ function GithubIcon() {
 export default function Login() {
   const { user, loginGoogle, loginGithub } = useAuth()
   const navigate = useNavigate()
-
-  useEffect(() => {
-    if (user) navigate('/')
-  }, [user])
+  useEffect(() => { if (user) navigate('/') }, [user])
 
   return (
-    <div className="min-h-screen bg-ink-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-wiki-bg-main flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <BookOpen size={24} className="text-ink-950" />
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 bg-wiki-navy rounded-lg flex items-center justify-center mx-auto mb-3">
+            <BookOpen size={22} className="text-wiki-gold" />
           </div>
-          <h1 className="font-display text-3xl font-bold text-ink-50 mb-1">Universe Wiki</h1>
-          <p className="text-ink-500 text-sm">Entre para acessar o wiki</p>
+          <h1 className="font-sans font-bold text-xl text-wiki-charcoal">Universe Wiki</h1>
+          <p className="text-sm text-wiki-text-muted mt-1">Entre para acessar o wiki</p>
         </div>
 
-        <div className="card p-6 space-y-3">
-          <button
-            onClick={loginGoogle}
-            className="w-full flex items-center justify-center gap-3 bg-ink-800 hover:bg-ink-700 border border-ink-700/50 hover:border-ink-600 text-ink-200 font-medium px-4 py-3 rounded-xl transition-all duration-200 text-sm"
-          >
-            <GoogleIcon />
-            Entrar com Google
+        <div className="border border-wiki-border bg-white p-5 space-y-2">
+          <button onClick={loginGoogle}
+            className="w-full flex items-center justify-center gap-2 border border-wiki-border hover:bg-wiki-bg-sidebar text-wiki-text text-sm px-4 py-2.5 transition-colors">
+            <GoogleIcon /> Entrar com Google
           </button>
-          <button
-            onClick={loginGithub}
-            className="w-full flex items-center justify-center gap-3 bg-ink-800 hover:bg-ink-700 border border-ink-700/50 hover:border-ink-600 text-ink-200 font-medium px-4 py-3 rounded-xl transition-all duration-200 text-sm"
-          >
-            <GithubIcon />
-            Entrar com GitHub
+          <button onClick={loginGithub}
+            className="w-full flex items-center justify-center gap-2 border border-wiki-border hover:bg-wiki-bg-sidebar text-wiki-text text-sm px-4 py-2.5 transition-colors">
+            <GithubIcon /> Entrar com GitHub
           </button>
         </div>
 
-        <div className="text-center mt-6">
-          <Link to="/" className="text-sm text-ink-600 hover:text-ink-400 transition-colors">
-            ← Voltar sem entrar
-          </Link>
+        <div className="text-center mt-4">
+          <Link to="/" className="text-sm wiki-link">← Voltar sem entrar</Link>
         </div>
       </div>
     </div>
