@@ -21,10 +21,12 @@ function EditRow({ cat, onSave, onDelete, onCancel }) {
   const [saving, setSaving] = useState(false)
 
 async function handleSave(id, data) {
-  await setDoc(doc(db, 'categories', id), { ...data, updatedAt: new Date() }, { merge: true })
-  setEditingId(null)
-}
-
+    const { setDoc } = await import('firebase/firestore')
+    const { db } = await import('../lib/firebase')
+    await setDoc(doc(db, 'categories', id), { ...data, updatedAt: new Date() }, { merge: true })
+    setEditingId(null)
+  }
+  
   return (
     <div className="border border-wiki-teal/30 bg-wiki-teal/5 p-3 space-y-3">
       <div className="flex items-center gap-2">
