@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { subscribeToCategorias, DEFAULT_CATEGORIES } from '../lib/db'
 import { db } from '../lib/firebase'
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore'
 import { createCategory } from '../lib/db'
 import { Pencil, Trash2, Plus, Save, X, ChevronRight, Loader } from 'lucide-react'
 
@@ -20,12 +20,10 @@ function EditRow({ cat, onSave, onDelete, onCancel }) {
   const [icon, setIcon]   = useState(cat.icon)
   const [saving, setSaving] = useState(false)
 
-  async function handleSave() {
-    if (!label.trim()) return
-    setSaving(true)
-    await onSave(cat.id, { label: label.trim(), icon })
-    setSaving(false)
-  }
+async function handleSave(id, data) {
+  await setDoc(doc(db, 'categories', id), { ...data, updatedAt: new Date() }, { merge: true })
+  setEditingId(null)
+}
 
   return (
     <div className="border border-wiki-teal/30 bg-wiki-teal/5 p-3 space-y-3">
