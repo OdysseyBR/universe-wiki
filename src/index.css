@@ -116,3 +116,28 @@
     content: attr(data-placeholder);
   }
 }
+
+/* ── Print / PDF ────────────────────────────────────── */
+@media print {
+  @page { margin: 1.5cm; size: A4; }
+  body { background: white !important; font-size: 12px; }
+  .wiki-content h1 { font-size: 18px; }
+  .wiki-content h2 { font-size: 15px; }
+  .wiki-content h3 { font-size: 13px; }
+  .wiki-content p  { font-size: 12px; }
+  .infobox { float: right; width: 200px; font-size: 11px; }
+  a { color: #284B63 !important; text-decoration: none; }
+  audio, video { display: none; }
+}
+
+/* ── Listas profissionais ───────────────────────────── */
+.wiki-content ul.task-list { list-style: none; margin-left: 0; }
+.wiki-content ul.task-list li { display: flex; align-items: flex-start; gap: 8px; }
+.wiki-content ul.task-list li input { margin-top: 3px; accent-color: #3C6E71; }
+
+.wiki-content ul li::marker { color: #284B63; }
+.wiki-content ol li::marker { color: #284B63; font-weight: 600; }
+
+/* Lista de definição */
+.wiki-content dl dt { font-weight: 600; color: #353535; margin-top: 8px; }
+.wiki-content dl dd { margin-left: 16px; color: #54595d; font-size: 13px; }

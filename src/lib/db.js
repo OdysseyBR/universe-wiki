@@ -47,8 +47,19 @@ export function subscribeToCategorias(callback) {
   return onSnapshot(
     query(collection(db, 'categories'), orderBy('createdAt')),
     snap => {
-      const custom = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      callback([...DEFAULT_CATEGORIES, ...custom])
+      const saved = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      // Sobrepõe categorias padrão com versões editadas salvas no Firestore
+      const savedIds = new Set(saved.map(c => c.id))
+      const defaults = DEFAULT_CATEGORIES
+        .filter(c => !savedIds.has(c.id))
+        .map(c => ({ ...c, custom: false }))
+      const customOnly = saved.filter(c => !DEFAULT_CATEGORIES.find(d => d.id === c.id))
+      const overrides  = saved.filter(c => DEFAULT_CATEGORIES.find(d => d.id === c.id))
+      const mergedDefaults = DEFAULT_CATEGORIES.map(d => {
+        const override = overrides.find(o => o.id === d.id)
+        return override ? { ...d, ...override } : { ...d, custom: false }
+      })
+      callback([...mergedDefaults, ...customOnly.map(c => ({ ...c, custom: true }))])
     }
   )
 }

@@ -9,26 +9,20 @@ import CategoryModal from '../components/CategoryModal'
 import {
   Bold, Italic, List, ListOrdered, Quote, Minus,
   Heading2, Heading3, ArrowLeft, Save, Loader,
-  Image, Music, X, Plus
+  Image, Music, X, Plus, Trash2, GripVertical
 } from 'lucide-react'
 
 function ToolbarBtn({ onClick, active, title, children }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`p-1.5 rounded transition-colors text-sm ${
-        active ? 'bg-amber-500/20 text-amber-400' : 'text-ink-500 hover:text-ink-200 hover:bg-ink-800'
-      }`}
-    >
+    <button type="button" onClick={onClick} title={title}
+      className={`p-1.5 rounded transition-colors text-sm ${active ? 'bg-wiki-navy/10 text-wiki-navy' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}>
       {children}
     </button>
   )
 }
 
-function UploadField({ label, icon: Icon, accept, preview, onUpload, onRemove, uploading, hint }) {
-  const inputRef = useRef()
+function UploadBtn({ icon: Icon, accept, onUpload, uploading, label }) {
+  const ref = useRef()
   async function handleChange(e) {
     const file = e.target.files[0]
     if (!file) return
@@ -36,39 +30,14 @@ function UploadField({ label, icon: Icon, accept, preview, onUpload, onRemove, u
     e.target.value = ''
   }
   return (
-    <div>
-      <label className="block text-xs font-mono text-ink-500 uppercase tracking-wider mb-2">
-        {label} <span className="normal-case text-ink-600">{hint}</span>
-      </label>
-      {preview ? (
-        <div className="relative rounded-xl overflow-hidden border border-ink-700/50 bg-ink-900">
-          {accept.includes('image') ? (
-            <img src={preview} alt="" className="w-full max-h-56 object-cover" />
-          ) : (
-            <div className="flex items-center gap-3 p-4">
-              <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Music size={18} className="text-amber-500" />
-              </div>
-              <audio controls src={preview} className="w-full h-8" style={{ height: '32px' }} />
-            </div>
-          )}
-          <button type="button" onClick={onRemove} className="absolute top-2 right-2 w-7 h-7 bg-ink-950/80 hover:bg-red-600/80 rounded-full flex items-center justify-center transition-colors">
-            <X size={13} className="text-ink-200" />
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="w-full border border-dashed border-ink-700/60 hover:border-amber-500/40 rounded-xl p-6 flex flex-col items-center gap-2 text-ink-500 hover:text-ink-300 transition-all duration-200 bg-ink-900/50 hover:bg-ink-800/30 disabled:opacity-50"
-        >
-          {uploading ? <Loader size={20} className="animate-spin text-amber-500" /> : <Icon size={20} />}
-          <span className="text-sm">{uploading ? 'Enviando...' : 'Clique para fazer upload'}</span>
-        </button>
-      )}
-      <input ref={inputRef} type="file" accept={accept} onChange={handleChange} className="hidden" />
-    </div>
+    <>
+      <button type="button" onClick={() => ref.current?.click()} disabled={uploading}
+        title={label}
+        className="p-1.5 rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors disabled:opacity-40">
+        {uploading ? <Loader size={14} className="animate-spin" /> : <Icon size={14} />}
+      </button>
+      <input ref={ref} type="file" accept={accept} onChange={handleChange} className="hidden" />
+    </>
   )
 }
 
@@ -83,11 +52,13 @@ export default function ArticleEditor() {
   const [category, setCategory]   = useState(searchParams.get('category') || 'characters')
   const [tags, setTags]           = useState('')
   const [imageUrl, setImageUrl]   = useState('')
+  const [images, setImages]       = useState([]) // galeria
   const [audioUrl, setAudioUrl]   = useState('')
   const [saving, setSaving]       = useState(false)
   const [loading, setLoading]     = useState(isEditing)
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [uploadingAudio, setUploadingAudio] = useState(false)
+  const [uploadingCover, setUploadingCover]   = useState(false)
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+  const [uploadingAudio, setUploadingAudio]   = useState(false)
   const [categories, setCategories] = useState([])
   const [showCatModal, setShowCatModal] = useState(false)
 
@@ -113,6 +84,7 @@ export default function ArticleEditor() {
           setCategory(data.category || 'characters')
           setTags((data.tags || []).join(', '))
           setImageUrl(data.imageUrl || '')
+          setImages(data.images || [])
           setAudioUrl(data.audioUrl || '')
           editor.commands.setContent(data.content || '')
         }
@@ -121,13 +93,32 @@ export default function ArticleEditor() {
     }
   }, [id, editor])
 
-  async function handleImageUpload(file) {
+  async function handleCoverUpload(file) {
     const err = validateImage(file)
     if (err) return alert(err)
-    setUploadingImage(true)
+    setUploadingCover(true)
     try { setImageUrl(await uploadFile(file, 'universe-wiki/images')) }
     catch { alert('Erro ao enviar imagem.') }
-    setUploadingImage(false)
+    setUploadingCover(false)
+  }
+
+  async function handleGalleryUpload(file) {
+    const err = validateImage(file)
+    if (err) return alert(err)
+    setUploadingGallery(true)
+    try {
+      const url = await uploadFile(file, 'universe-wiki/images')
+      setImages(prev => [...prev, { url, caption: '' }])
+    } catch { alert('Erro ao enviar imagem.') }
+    setUploadingGallery(false)
+  }
+
+  function updateCaption(i, caption) {
+    setImages(prev => prev.map((img, idx) => idx === i ? { ...img, caption } : img))
+  }
+
+  function removeImage(i) {
+    setImages(prev => prev.filter((_, idx) => idx !== i))
   }
 
   async function handleAudioUpload(file) {
@@ -149,153 +140,197 @@ export default function ArticleEditor() {
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       content: editor?.getHTML() || '',
       imageUrl: imageUrl || '',
+      images: images || [],
       audioUrl: audioUrl || '',
     }
     try {
-      if (isEditing) {
-        await updateArticle(id, data)
-        navigate(`/article/${id}`)
-      } else {
-        const ref = await createArticle(data)
-        navigate(`/article/${ref.id}`)
-      }
-    } catch {
-      alert('Erro ao salvar. Tente novamente.')
-      setSaving(false)
-    }
+      if (isEditing) { await updateArticle(id, data); navigate(`/article/${id}`) }
+      else { const ref = await createArticle(data); navigate(`/article/${ref.id}`) }
+    } catch { alert('Erro ao salvar.'); setSaving(false) }
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader size={24} className="animate-spin text-amber-500" />
-    </div>
-  )
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader size={24} className="animate-spin text-wiki-teal" /></div>
 
   return (
-    <div className="animate-slide-up max-w-3xl">
+    <div className="animate-fade-in">
       {showCatModal && (
-        <CategoryModal
-          onClose={() => setShowCatModal(false)}
-          onCreated={cat => setCategory(cat.id)}
-        />
+        <CategoryModal onClose={() => setShowCatModal(false)} onCreated={cat => setCategory(cat.id)} />
       )}
 
-      <div className="flex items-center justify-between gap-4 mb-8">
+      {/* Topbar */}
+      <div className="border-b border-wiki-border bg-wiki-bg-sidebar px-5 py-2 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-ink-500 hover:text-ink-300 transition-colors">
-            <ArrowLeft size={18} />
+          <button onClick={() => navigate(-1)} className="text-wiki-text-muted hover:text-wiki-charcoal transition-colors">
+            <ArrowLeft size={16} />
           </button>
-          <h1 className="font-display text-2xl font-bold text-ink-50">
+          <span className="text-sm font-semibold text-wiki-charcoal">
             {isEditing ? 'Editar artigo' : 'Novo artigo'}
-          </h1>
+          </span>
         </div>
-        <button onClick={handleSave} disabled={saving} className="btn-primary">
-          {saving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}
+        <button onClick={handleSave} disabled={saving} className="btn-primary text-sm py-1.5">
+          {saving ? <Loader size={14} className="animate-spin" /> : <Save size={14} />}
           {saving ? 'Salvando...' : 'Salvar'}
         </button>
       </div>
 
-      <div className="space-y-5">
-        {/* Categoria */}
-        <div>
-          <label className="block text-xs font-mono text-ink-500 uppercase tracking-wider mb-2">Categoria</label>
-          <div className="flex gap-2 flex-wrap items-center">
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategory(cat.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border transition-all ${
-                  category === cat.id
-                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                    : 'border-ink-700/50 text-ink-500 hover:border-ink-600 hover:text-ink-300'
-                }`}
-              >
-                {cat.icon} {cat.label}
+      <div className="p-5 max-w-4xl">
+        <div className="space-y-4">
+
+          {/* Categoria */}
+          <div>
+            <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">Categoria</label>
+            <div className="flex gap-2 flex-wrap items-center">
+              {categories.map(cat => (
+                <button key={cat.id} type="button" onClick={() => setCategory(cat.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm border transition-all ${
+                    category === cat.id
+                      ? 'bg-wiki-navy/10 border-wiki-navy/30 text-wiki-navy font-semibold'
+                      : 'border-wiki-border text-wiki-text-muted hover:border-wiki-navy/30 hover:text-wiki-navy'
+                  }`}>
+                  {cat.icon} {cat.label}
+                </button>
+              ))}
+              <button type="button" onClick={() => setShowCatModal(true)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded text-sm border border-dashed border-wiki-border text-wiki-text-muted hover:border-wiki-teal hover:text-wiki-teal transition-all">
+                <Plus size={12} /> Nova categoria
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setShowCatModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-dashed border-ink-700/50 text-ink-600 hover:border-amber-500/40 hover:text-amber-500 transition-all"
-            >
-              <Plus size={13} />
-              Nova categoria
+            </div>
+          </div>
+
+          {/* Título */}
+          <div>
+            <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">Título *</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Nome do artigo..."
+              className="w-full border border-wiki-border bg-white px-3 py-2.5 text-xl font-bold text-wiki-charcoal placeholder-wiki-silver focus:outline-none focus:border-wiki-navy font-sans" />
+          </div>
+
+          {/* Resumo */}
+          <div>
+            <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">Resumo</label>
+            <textarea value={summary} onChange={e => setSummary(e.target.value)} placeholder="Uma frase descrevendo este artigo..." rows={2}
+              className="w-full border border-wiki-border bg-white px-3 py-2 text-wiki-text placeholder-wiki-silver focus:outline-none focus:border-wiki-navy resize-none text-sm" />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">
+              Tags <span className="normal-case font-normal text-wiki-text-muted">(separadas por vírgula)</span>
+            </label>
+            <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="ex: protagonista, história 1..."
+              className="w-full border border-wiki-border bg-white px-3 py-2 text-wiki-text placeholder-wiki-silver focus:outline-none focus:border-wiki-navy text-sm font-mono" />
+          </div>
+
+          {/* Uploads */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Capa */}
+            <div>
+              <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">
+                Imagem de capa (infobox)
+              </label>
+              {imageUrl ? (
+                <div className="relative border border-wiki-border">
+                  <img src={imageUrl} alt="" className="w-full max-h-40 object-cover" />
+                  <button type="button" onClick={() => setImageUrl('')}
+                    className="absolute top-1 right-1 w-6 h-6 bg-wiki-red/80 rounded-full flex items-center justify-center text-white">
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center border border-dashed border-wiki-border bg-wiki-bg-sidebar hover:bg-wiki-silver/30 p-6 cursor-pointer transition-colors">
+                  {uploadingCover ? <Loader size={18} className="animate-spin text-wiki-teal" /> : <Image size={18} className="text-wiki-text-muted" />}
+                  <span className="text-xs text-wiki-text-muted mt-1">{uploadingCover ? 'Enviando...' : 'Clique para upload'}</span>
+                  <input type="file" accept="image/*" onChange={e => { const f = e.target.files[0]; if (f) handleCoverUpload(f); e.target.value = '' }} className="hidden" />
+                </label>
+              )}
+            </div>
+
+            {/* Áudio */}
+            <div>
+              <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">Áudio</label>
+              {audioUrl ? (
+                <div className="border border-wiki-border bg-wiki-bg-sidebar p-3">
+                  <audio controls src={audioUrl} className="w-full" style={{ height: '32px' }} />
+                  <button type="button" onClick={() => setAudioUrl('')} className="text-xs text-wiki-red hover:underline mt-1 flex items-center gap-1">
+                    <X size={11} /> Remover
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center border border-dashed border-wiki-border bg-wiki-bg-sidebar hover:bg-wiki-silver/30 p-6 cursor-pointer transition-colors">
+                  {uploadingAudio ? <Loader size={18} className="animate-spin text-wiki-teal" /> : <Music size={18} className="text-wiki-text-muted" />}
+                  <span className="text-xs text-wiki-text-muted mt-1">{uploadingAudio ? 'Enviando...' : 'Clique para upload'}</span>
+                  <input type="file" accept="audio/*" onChange={e => { const f = e.target.files[0]; if (f) handleAudioUpload(f); e.target.value = '' }} className="hidden" />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Galeria */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold text-wiki-text-muted uppercase tracking-wider">
+                Galeria de imagens <span className="normal-case font-normal">({images.length} imagem{images.length !== 1 ? 's' : ''})</span>
+              </label>
+              <label className="flex items-center gap-1 text-xs text-wiki-teal hover:underline cursor-pointer font-medium">
+                {uploadingGallery ? <Loader size={12} className="animate-spin" /> : <Plus size={12} />}
+                {uploadingGallery ? 'Enviando...' : 'Adicionar imagem'}
+                <input type="file" accept="image/*" disabled={uploadingGallery}
+                  onChange={e => { const f = e.target.files[0]; if (f) handleGalleryUpload(f); e.target.value = '' }}
+                  className="hidden" />
+              </label>
+            </div>
+            {images.length > 0 && (
+              <div className="space-y-2 border border-wiki-border p-3 bg-wiki-bg-sidebar">
+                {images.map((img, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-white border border-wiki-border p-2">
+                    <img src={img.url} alt="" className="w-16 h-12 object-cover flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={img.caption}
+                        onChange={e => updateCaption(i, e.target.value)}
+                        placeholder="Legenda da imagem (opcional)"
+                        className="w-full text-xs border border-wiki-border px-2 py-1 focus:outline-none focus:border-wiki-navy text-wiki-text"
+                      />
+                    </div>
+                    <button type="button" onClick={() => removeImage(i)} className="text-wiki-red hover:opacity-80 flex-shrink-0">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Editor */}
+          <div>
+            <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">Conteúdo</label>
+            <div className="border border-wiki-border bg-white">
+              {/* Toolbar */}
+              <div className="flex items-center gap-0.5 p-2 border-b border-wiki-border flex-wrap bg-wiki-bg-sidebar">
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Negrito"><Bold size={14} /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')} title="Itálico"><Italic size={14} /></ToolbarBtn>
+                <div className="w-px h-4 bg-wiki-border mx-0.5" />
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Título H2"><Heading2 size={14} /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive('heading', { level: 3 })} title="Título H3"><Heading3 size={14} /></ToolbarBtn>
+                <div className="w-px h-4 bg-wiki-border mx-0.5" />
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Lista com marcadores"><List size={14} /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Lista numerada"><ListOrdered size={14} /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleTaskList?.().run()} active={editor?.isActive('taskList')} title="Lista de tarefas">☑</ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Citação"><Quote size={14} /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Separador"><Minus size={14} /></ToolbarBtn>
+              </div>
+              <div className="p-4 min-h-64">
+                <EditorContent editor={editor} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button onClick={handleSave} disabled={saving} className="btn-primary">
+              {saving ? <Loader size={14} className="animate-spin" /> : <Save size={14} />}
+              {saving ? 'Salvando...' : 'Salvar artigo'}
             </button>
           </div>
-        </div>
-
-        {/* Título */}
-        <div>
-          <label className="block text-xs font-mono text-ink-500 uppercase tracking-wider mb-2">Título *</label>
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="Nome do artigo..."
-            className="w-full bg-ink-900 border border-ink-700/50 rounded-lg px-4 py-3 text-ink-100 font-display text-xl placeholder-ink-700 focus:outline-none focus:border-amber-500/50"
-          />
-        </div>
-
-        {/* Resumo */}
-        <div>
-          <label className="block text-xs font-mono text-ink-500 uppercase tracking-wider mb-2">Resumo</label>
-          <textarea
-            value={summary}
-            onChange={e => setSummary(e.target.value)}
-            placeholder="Uma frase descrevendo este artigo..."
-            rows={2}
-            className="w-full bg-ink-900 border border-ink-700/50 rounded-lg px-4 py-3 text-ink-300 placeholder-ink-700 focus:outline-none focus:border-amber-500/50 resize-none text-sm"
-          />
-        </div>
-
-        {/* Tags */}
-        <div>
-          <label className="block text-xs font-mono text-ink-500 uppercase tracking-wider mb-2">
-            Tags <span className="normal-case text-ink-600">(separadas por vírgula)</span>
-          </label>
-          <input
-            type="text"
-            value={tags}
-            onChange={e => setTags(e.target.value)}
-            placeholder="ex: protagonista, história 1, magia..."
-            className="w-full bg-ink-900 border border-ink-700/50 rounded-lg px-4 py-2.5 text-ink-300 placeholder-ink-700 focus:outline-none focus:border-amber-500/50 text-sm font-mono"
-          />
-        </div>
-
-        {/* Uploads */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UploadField label="Imagem de capa" icon={Image} accept="image/jpeg,image/png,image/webp" preview={imageUrl} onUpload={handleImageUpload} onRemove={() => setImageUrl('')} uploading={uploadingImage} hint="(JPG, PNG ou WEBP · máx. 2MB)" />
-          <UploadField label="Áudio" icon={Music} accept="audio/mpeg,audio/wav,audio/ogg" preview={audioUrl} onUpload={handleAudioUpload} onRemove={() => setAudioUrl('')} uploading={uploadingAudio} hint="(MP3, WAV ou OGG · máx. 10MB)" />
-        </div>
-
-        {/* Editor */}
-        <div>
-          <label className="block text-xs font-mono text-ink-500 uppercase tracking-wider mb-2">Conteúdo</label>
-          <div className="border border-ink-700/50 rounded-xl overflow-hidden bg-ink-900">
-            <div className="flex items-center gap-0.5 p-2 border-b border-ink-800/60 flex-wrap">
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Negrito"><Bold size={14} /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')} title="Itálico"><Italic size={14} /></ToolbarBtn>
-              <div className="w-px h-4 bg-ink-800 mx-1" />
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Título H2"><Heading2 size={14} /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive('heading', { level: 3 })} title="Título H3"><Heading3 size={14} /></ToolbarBtn>
-              <div className="w-px h-4 bg-ink-800 mx-1" />
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Lista"><List size={14} /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Lista numerada"><ListOrdered size={14} /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Citação"><Quote size={14} /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Separador"><Minus size={14} /></ToolbarBtn>
-            </div>
-            <div className="p-5 min-h-64">
-              <EditorContent editor={editor} />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <button onClick={handleSave} disabled={saving} className="btn-primary">
-            {saving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}
-            {saving ? 'Salvando...' : 'Salvar artigo'}
-          </button>
         </div>
       </div>
     </div>

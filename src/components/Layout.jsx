@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { subscribeToCategorias } from '../lib/db'
-import { useEffect } from 'react'
-import { Search, Plus, LogOut, LogIn, Menu, X, BookOpen, User, Shield, ChevronRight } from 'lucide-react'
+import { Search, Plus, LogOut, LogIn, Menu, X, User, ChevronRight, Settings } from 'lucide-react'
 
 export default function Layout() {
   const { user, isAdmin, logout } = useAuth()
@@ -29,12 +28,16 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
 
-      {/* Header top bar */}
-      <header className="bg-wiki-navy border-b border-wiki-navy-dark">
-        <div className="max-w-screen-xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
+      {/* Header */}
+      <header className="bg-wiki-navy border-b border-wiki-navy-dark print:hidden">
+        <div className="max-w-screen-xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <BookOpen size={18} className="text-wiki-gold" />
-            <span className="font-sans font-bold text-white text-lg tracking-wide">Universe Wiki</span>
+            <img src="/logo.svg" alt="Focusverse" className="h-8 w-8 object-contain" />
+            <div className="flex flex-col leading-tight">
+              <span className="font-sans font-bold text-white text-sm tracking-wide">Universe Wiki</span>
+              <span className="font-sans text-wiki-gold text-xs tracking-widest">FOCUSVERSE</span>
+            </div>
           </Link>
 
           {/* Search */}
@@ -44,7 +47,7 @@ export default function Layout() {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Buscar no wiki..."
+                placeholder="Buscar no wiki... ou #tag"
                 className="flex-1 bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm px-3 py-1.5 rounded-l focus:outline-none focus:bg-white/20"
               />
               <button type="submit" className="bg-wiki-teal hover:bg-wiki-teal-light border border-wiki-teal-dark text-white text-sm px-3 py-1.5 rounded-r transition-colors">
@@ -53,12 +56,12 @@ export default function Layout() {
             </div>
           </form>
 
-          {/* User actions */}
+          {/* User */}
           <div className="flex items-center gap-2">
             {user ? (
               <div className="flex items-center gap-2">
                 {user.photoURL
-                  ? <img src={user.photoURL} alt="" className="w-6 h-6 rounded-full border border-white/30" />
+                  ? <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full border border-white/30" />
                   : <User size={14} className="text-white/70" />
                 }
                 <span className="text-white/80 text-xs hidden md:block">{user.displayName}</span>
@@ -67,7 +70,7 @@ export default function Layout() {
                     <Plus size={12} /> Novo artigo
                   </Link>
                 )}
-                <button onClick={logout} className="text-white/60 hover:text-white transition-colors">
+                <button onClick={logout} className="text-white/60 hover:text-white transition-colors ml-1">
                   <LogOut size={14} />
                 </button>
               </div>
@@ -76,7 +79,7 @@ export default function Layout() {
                 <LogIn size={14} /> Entrar
               </Link>
             )}
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-white/80 hover:text-white">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-white/80 hover:text-white ml-1">
               <Menu size={20} />
             </button>
           </div>
@@ -93,17 +96,14 @@ export default function Layout() {
           flex flex-col flex-shrink-0 overflow-y-auto
           transform transition-transform duration-200
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0
+          md:translate-x-0 print:hidden
         `}>
-          {/* Mobile close */}
           <div className="md:hidden flex items-center justify-between p-3 border-b border-wiki-border">
             <span className="font-semibold text-wiki-charcoal text-sm">Menu</span>
             <button onClick={() => setSidebarOpen(false)}><X size={18} /></button>
           </div>
 
-          {/* Navigation */}
           <nav className="p-3 space-y-4">
-            {/* Main nav */}
             <div>
               <p className="text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-1 px-2">Navegação</p>
               <ul className="space-y-0.5">
@@ -122,17 +122,16 @@ export default function Layout() {
               </ul>
             </div>
 
-            {/* Categorias */}
             <div>
               <p className="text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-1 px-2">Categorias</p>
               <ul className="space-y-0.5">
                 {categories.map(cat => (
-                  <li key={cat.id}>
+                  <li key={cat.id} className="flex items-center group">
                     <NavLink
                       to={`/category/${cat.id}`}
                       onClick={() => setSidebarOpen(false)}
                       className={({ isActive }) =>
-                        `flex items-center gap-1.5 px-2 py-1.5 text-sm rounded transition-colors ${
+                        `flex-1 flex items-center gap-1.5 px-2 py-1.5 text-sm rounded transition-colors ${
                           isActive
                             ? 'bg-wiki-navy/10 text-wiki-navy font-semibold border-l-2 border-wiki-navy pl-1.5'
                             : 'text-wiki-link hover:bg-wiki-silver/40'
@@ -140,14 +139,19 @@ export default function Layout() {
                       }
                     >
                       <span className="text-base leading-none">{cat.icon}</span>
-                      <span>{cat.label}</span>
+                      <span className="flex-1">{cat.label}</span>
                     </NavLink>
+                    {isAdmin && cat.custom && (
+                      <Link to={`/edit-category/${cat.id}`} onClick={() => setSidebarOpen(false)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-wiki-text-muted hover:text-wiki-teal transition-all">
+                        <Settings size={11} />
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Admin */}
             {isAdmin && (
               <div>
                 <p className="text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-1 px-2">Admin</p>
@@ -158,42 +162,40 @@ export default function Layout() {
                       <Plus size={13} /> Novo artigo
                     </Link>
                   </li>
+                  <li>
+                    <Link to="/manage-categories" onClick={() => setSidebarOpen(false)}
+                      className="flex items-center gap-2 px-2 py-1.5 text-sm text-wiki-teal hover:bg-wiki-silver/40 rounded transition-colors font-medium">
+                      <Settings size={13} /> Gerir categorias
+                    </Link>
+                  </li>
                 </ul>
               </div>
             )}
 
-            {/* Search mobile */}
             <div className="md:hidden">
               <form onSubmit={handleSearch} className="flex">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Buscar..."
-                  className="flex-1 border border-wiki-border text-sm px-2 py-1.5 rounded-l focus:outline-none focus:border-wiki-navy text-wiki-text bg-white"
-                />
-                <button type="submit" className="bg-wiki-navy text-white px-2 py-1.5 rounded-r">
-                  <Search size={13} />
-                </button>
+                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Buscar..." className="flex-1 border border-wiki-border text-sm px-2 py-1.5 rounded-l focus:outline-none text-wiki-text bg-white" />
+                <button type="submit" className="bg-wiki-navy text-white px-2 py-1.5 rounded-r"><Search size={13} /></button>
               </form>
             </div>
           </nav>
         </aside>
 
-        {/* Mobile overlay */}
         {sidebarOpen && (
           <div className="fixed inset-0 bg-black/40 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
         )}
 
-        {/* Main content */}
         <main className="flex-1 min-w-0 bg-white border-r border-wiki-border">
           <Outlet />
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-wiki-bg-sidebar border-t border-wiki-border py-4 text-center">
-        <p className="text-xs text-wiki-text-muted">Universe Wiki — O universo literário documentado</p>
+      <footer className="bg-wiki-bg-sidebar border-t border-wiki-border py-4 text-center print:hidden">
+        <div className="flex items-center justify-center gap-2">
+          <img src="/logo.svg" alt="Focusverse" className="h-5 w-5 object-contain opacity-60" />
+          <p className="text-xs text-wiki-text-muted">Universe Wiki — Focusverse</p>
+        </div>
       </footer>
     </div>
   )

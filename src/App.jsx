@@ -6,6 +6,7 @@ import Article from './pages/Article'
 import ArticleEditor from './pages/ArticleEditor'
 import Search from './pages/Search'
 import Login from './pages/Login'
+import ManageCategories from './pages/ManageCategories'
 import { useAuth } from './contexts/AuthContext'
 
 function ProtectedRoute({ children }) {
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="search" element={<Search />} />
         <Route path="new" element={<ProtectedRoute><ArticleEditor /></ProtectedRoute>} />
         <Route path="edit/:id" element={<ProtectedRoute><ArticleEditor /></ProtectedRoute>} />
+        <Route path="manage-categories" element={<ProtectedRoute><ManageCategories /></ProtectedRoute>} />
       </Route>
     </Routes>
   )
