@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getRecentArticles, getAllCategories, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
-import { Plus, Clock, ChevronRight } from 'lucide-react'
+import { Plus, Clock, ChevronRight, Globe } from 'lucide-react'
+import { getUniverseLabel } from '../lib/universes'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -73,6 +74,12 @@ export default function Home() {
                         <Link to={`/article/${article.id}`} className="wiki-link font-medium">
                           {article.title}
                         </Link>
+                        {article.universe && (
+                          <span className="inline-flex items-center gap-0.5 ml-2 text-xs bg-wiki-teal/10 border border-wiki-teal/25 text-wiki-teal px-1.5 py-0.5 rounded font-medium">
+                            <Globe size={9} />
+                            {getUniverseLabel(article.universe, article.universeVariant)}
+                          </span>
+                        )}
                         {article.summary && (
                           <span className="text-wiki-text-muted ml-2 text-xs">— {article.summary}</span>
                         )}

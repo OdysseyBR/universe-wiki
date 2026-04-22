@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
 import { parseWikiLinks } from '../lib/wikilink'
 import { Pencil, Trash2, Clock, Music, ChevronRight, Printer, Globe } from 'lucide-react'
+import { getUniverseLabel, UNIVERSES } from '../lib/universes'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -148,10 +149,16 @@ export default function Article() {
             <span>{catIcon}</span>
             <Link to={`/category/${article.category}`} className="wiki-link">{catLabel}</Link>
           </span>
-          {article.universe && (
-            <span className="flex items-center gap-1 bg-wiki-navy/10 border border-wiki-navy/20 text-wiki-navy px-2 py-0.5 rounded font-medium">
+          {article.universe && article.universe !== 'geral' && (
+            <span className="flex items-center gap-1 bg-wiki-teal/10 border border-wiki-teal/30 text-wiki-teal px-2 py-0.5 rounded font-semibold text-xs uppercase tracking-wide">
               <Globe size={10} />
               {getUniverseLabel(article.universe, article.universeVariant)}
+            </span>
+          )}
+          {article.universe === 'geral' && (
+            <span className="flex items-center gap-1 bg-wiki-navy/10 border border-wiki-navy/20 text-wiki-navy px-2 py-0.5 rounded font-semibold text-xs uppercase tracking-wide">
+              <Globe size={10} />
+              Universo Geral
             </span>
           )}
           {article.tags?.map(tag => (
