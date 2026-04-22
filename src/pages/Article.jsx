@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
+import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS, getUniverseLabel } from '../lib/db'
 import { parseWikiLinks } from '../lib/wikilink'
-import { Pencil, Trash2, Clock, Music, ChevronRight, Printer } from 'lucide-react'
+import { Pencil, Trash2, Clock, Music, ChevronRight, Printer, Globe } from 'lucide-react'
+import { getUniverseLabel } from '../lib/universes'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -148,6 +149,12 @@ export default function Article() {
             <span>{catIcon}</span>
             <Link to={`/category/${article.category}`} className="wiki-link">{catLabel}</Link>
           </span>
+          {article.universe && (
+            <span className="flex items-center gap-1 bg-wiki-navy/10 border border-wiki-navy/20 text-wiki-navy px-2 py-0.5 rounded font-medium">
+              <Globe size={10} />
+              {getUniverseLabel(article.universe, article.universeVariant)}
+            </span>
+          )}
           {article.tags?.map(tag => (
             <span key={tag} className="category-tag">#{tag}</span>
           ))}
@@ -183,6 +190,14 @@ export default function Article() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Badge de universo */}
+        {article.universe && (
+          <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1.5 border border-wiki-navy/30 bg-wiki-navy/5 text-wiki-navy text-xs font-medium rounded">
+            <span>🌌</span>
+            {getUniverseLabel(article.universe)}
           </div>
         )}
 

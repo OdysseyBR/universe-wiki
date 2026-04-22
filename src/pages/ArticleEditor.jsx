@@ -6,6 +6,8 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { createArticle, updateArticle, getArticle, subscribeToCategorias } from '../lib/db'
 import { uploadFile, validateImage, validateAudio } from '../lib/cloudinary'
 import CategoryModal from '../components/CategoryModal'
+import UniverseSelector from '../components/UniverseSelector'
+import UniverseSelector from '../components/UniverseSelector'
 import {
   Bold, Italic, List, ListOrdered, Quote, Minus,
   Heading2, Heading3, ArrowLeft, Save, Loader,
@@ -54,11 +56,14 @@ export default function ArticleEditor() {
   const [imageUrl, setImageUrl]   = useState('')
   const [images, setImages]       = useState([]) // galeria
   const [audioUrl, setAudioUrl]   = useState('')
+  const [universe, setUniverse]   = useState('')
   const [saving, setSaving]       = useState(false)
   const [loading, setLoading]     = useState(isEditing)
   const [uploadingCover, setUploadingCover]   = useState(false)
   const [uploadingGallery, setUploadingGallery] = useState(false)
   const [uploadingAudio, setUploadingAudio]   = useState(false)
+  const [universe, setUniverse]             = useState('geral')
+  const [universeVariant, setUniverseVariant] = useState('')
   const [categories, setCategories] = useState([])
   const [showCatModal, setShowCatModal] = useState(false)
 
@@ -86,6 +91,7 @@ export default function ArticleEditor() {
           setImageUrl(data.imageUrl || '')
           setImages(data.images || [])
           setAudioUrl(data.audioUrl || '')
+          setUniverse(data.universe || '')
           editor.commands.setContent(data.content || '')
         }
         setLoading(false)
@@ -142,6 +148,7 @@ export default function ArticleEditor() {
       imageUrl: imageUrl || '',
       images: images || [],
       audioUrl: audioUrl || '',
+      universe: universe || '',
     }
     try {
       if (isEditing) { await updateArticle(id, data); navigate(`/article/${id}`) }
@@ -219,6 +226,22 @@ export default function ArticleEditor() {
             <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="ex: protagonista, história 1..."
               className="w-full border border-wiki-border bg-white px-3 py-2 text-wiki-text placeholder-wiki-silver focus:outline-none focus:border-wiki-navy text-sm font-mono" />
           </div>
+
+          {/* Universo */}
+          <div>
+            <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">
+              Universo do Focusverse
+            </label>
+            <UniverseSelector value={universe} onChange={setUniverse} />
+          </div>
+
+          {/* Universo */}
+          <UniverseSelector
+            value={universe}
+            variant={universeVariant}
+            onChange={setUniverse}
+            onVariantChange={setUniverseVariant}
+          />
 
           {/* Uploads */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
