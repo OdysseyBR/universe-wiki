@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS, getUniverseLabel } from '../lib/db'
+import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
 import { parseWikiLinks } from '../lib/wikilink'
 import { Pencil, Trash2, Clock, Music, ChevronRight, Printer, Globe } from 'lucide-react'
-import { getUniverseLabel } from '../lib/universes'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
