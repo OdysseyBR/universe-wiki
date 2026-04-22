@@ -243,7 +243,13 @@ export default function ArticleEditor() {
             onVariantChange={setUniverseVariant}
           />
 
-          {/* Uploads */}
+          {/* Universo */}
+          <UniverseSelector
+            value={universe}
+            variant={universeVariant}
+            onChange={setUniverse}
+            onVariantChange={setUniverseVariant}
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Capa */}
             <div>
