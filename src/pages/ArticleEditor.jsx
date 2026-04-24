@@ -6,6 +6,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { createArticle, updateArticle, getArticle, subscribeToCategorias } from '../lib/db'
 import { uploadFile, validateImage, validateAudio } from '../lib/cloudinary'
 import CategoryModal from '../components/CategoryModal'
+import InfoboxEditor from '../components/InfoboxEditor'
 import UniverseSelector from '../components/UniverseSelector'
 import {
   Bold, Italic, List, ListOrdered, Quote, Minus,
@@ -36,6 +37,7 @@ export default function ArticleEditor() {
   const [images, setImages]         = useState([])
   const [audioUrl, setAudioUrl]     = useState('')
   const [universe, setUniverse]     = useState('geral')
+  const [infobox, setInfobox]         = useState([])
   const [universeVariant, setUniverseVariant] = useState('')
   const [saving, setSaving]         = useState(false)
   const [loading, setLoading]       = useState(isEditing)
@@ -75,6 +77,7 @@ export default function ArticleEditor() {
           setAudioUrl(data.audioUrl || '')
           setUniverse(data.universe || 'geral')
           setUniverseVariant(data.universeVariant || '')
+          setInfobox(data.infobox || [])
           editor.commands.setContent(data.content || '')
         }
         setLoading(false)
@@ -125,6 +128,7 @@ export default function ArticleEditor() {
       audioUrl: audioUrl || '',
       universe: universe || 'geral',
       universeVariant: universeVariant || '',
+      infobox: infobox.filter(r => r.label.trim() || r.value.trim()),
     }
     try {
       if (isEditing) { await updateArticle(id, data); navigate(`/article/${id}`) }
@@ -283,6 +287,9 @@ export default function ArticleEditor() {
             </div>
           )}
         </div>
+
+        {/* Infobox */}
+        <InfoboxEditor rows={infobox} onChange={setInfobox} />
 
         {/* Editor */}
         <div>

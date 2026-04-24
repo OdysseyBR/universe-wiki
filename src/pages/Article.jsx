@@ -5,6 +5,7 @@ import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_IC
 import { parseWikiLinks } from '../lib/wikilink'
 import { Pencil, Trash2, Clock, Music, ChevronRight, Printer, Globe } from 'lucide-react'
 import { getUniverseLabel, UNIVERSES } from '../lib/universes'
+import { InfoboxPreview } from '../components/InfoboxEditor'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -172,30 +173,55 @@ export default function Article() {
           )}
         </div>
 
-        {/* Imagem de capa principal como infobox */}
-        {article.imageUrl && (
+        {/* Infobox lateral customizável */}
+        {(article.infobox?.length > 0 || article.imageUrl || article.images?.length > 0) && (
           <div className="infobox">
             <div className="infobox-title">{article.title}</div>
-            <div className="infobox-image">
-              <img src={article.imageUrl} alt={article.title} />
-            </div>
-          </div>
-        )}
-
-        {/* Galeria de imagens adicionais */}
-        {article.images?.length > 0 && (
-          <div className="infobox">
-            <div className="infobox-title">Galeria</div>
-            <div className="divide-y divide-wiki-border">
-              {article.images.map((img, i) => (
-                <div key={i}>
-                  <img src={img.url} alt={img.caption || ''} className="w-full" />
-                  {img.caption && (
-                    <p className="text-xs text-wiki-text-muted text-center px-2 py-1 italic">{img.caption}</p>
-                  )}
-                </div>
-              ))}
-            </div>
+            {article.imageUrl && (
+              <div className="infobox-image">
+                <img src={article.imageUrl} alt={article.title} />
+              </div>
+            )}
+            {article.images?.length > 0 && (
+              <div className="divide-y divide-wiki-border">
+                {article.images.map((img, i) => (
+                  <div key={i}>
+                    <img src={img.url} alt={img.caption || ''} className="w-full" />
+                    {img.caption && (
+                      <p className="text-xs text-wiki-text-muted text-center px-2 py-1 italic">{img.caption}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {article.infobox?.filter(r => r.label || r.value).length > 0 && (
+              <table className="w-full text-xs">
+                <tbody>
+                  {article.infobox.filter(r => r.label || r.value).map((row, i) => {
+                    if (row.type === 'section') return (
+                      <tr key={i}>
+                        <td colSpan={2} className="px-2 py-1 font-bold text-wiki-navy border border-wiki-border bg-wiki-bg-infobox">
+                          {row.label}
+                        </td>
+                      </tr>
+                    )
+                    return (
+                      <tr key={i}>
+                        <th className={`px-2 py-1 border border-wiki-border bg-wiki-bg-sidebar text-right align-top ${
+                          row.type === 'sub' ? 'pl-4 font-normal text-wiki-text-muted' : 'font-semibold'
+                        }`} style={{ width: '40%' }}>
+                          {row.type === 'sub' && <span className="mr-1">•</span>}
+                          {row.label}
+                        </th>
+                        <td className="px-2 py-1 border border-wiki-border align-top">
+                          {row.value}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
