@@ -1,39 +1,151 @@
 import { useState, useRef } from 'react'
-import { Plus, Trash2, Image, X, Loader } from 'lucide-react'
+import { Plus, Trash2, Image, X, Loader, Settings } from 'lucide-react'
 import { uploadFile, validateImage } from '../lib/cloudinary'
 
-const MAX_ITEMS = 20
+const MAX_ROWS = 50
+const MAX_COLS = 10
+const MAX_LISTS = 10
 
+// ─── Editor de colunas ────────────────────────────────────
+function ColumnEditor({ columns, onChange }) {
+  function addCol() {
+    if (columns.length >= MAX_COLS) return
+    onChange([...columns, { name: '', type: 'text' }])
+  }
+  function removeCol(i) {
+    onChange(columns.filter((_, idx) => idx !== i))
+  }
+  function updateCol(i, field, value) {
+    onChange(columns.map((c, idx) => idx === i ? { ...c, [field]: value } : c))
+  }
+
+  return (
+    <div className="border border-wiki-border bg-wiki-bg-infobox p-3 mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-bold text-wiki-text-muted uppercase tracking-wider">
+          Colunas ({columns.length}/{MAX_COLS})
+        </p>
+        <button type="button" onClick={addCol} disabled={columns.length >= MAX_COLS}
+          className="flex items-center gap-1 text-xs text-wiki-teal hover:underline disabled:opacity-40">
+          <Plus size={11} /> Adicionar coluna
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        {columns.map((col, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="text-xs text-wiki-text-muted w-5 flex-shrink-0 font-mono">{i + 1}</span>
+            <input
+              type="text"
+              value={col.name}
+              onChange={e => updateCol(i, 'name', e.target.value)}
+              placeholder={`Nome da coluna ${i + 1}...`}
+              className="flex-1 text-xs border border-wiki-border px-2 py-1 bg-white focus:outline-none focus:border-wiki-navy text-wiki-charcoal"
+            />
+            <select
+              value={col.type}
+              onChange={e => updateCol(i, 'type', e.target.value)}
+              className="text-xs border border-wiki-border px-1.5 py-1 bg-white focus:outline-none w-20 flex-shrink-0 text-wiki-text"
+            >
+              <option value="text">Texto</option>
+              <option value="image">Imagem</option>
+            </select>
+            <button type="button" onClick={() => removeCol(i)}
+              className="text-wiki-text-muted hover:text-wiki-red flex-shrink-0">
+              <Trash2 size={12} />
+            </button>
+          </div>
+        ))}
+        {columns.length === 0 && (
+          <p className="text-xs text-wiki-text-muted italic">Nenhuma coluna. Adicione pelo menos uma.</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Célula de imagem ─────────────────────────────────────
+function ImageCell({ value, onChange }) {
+  const [uploading, setUploading] = useState(false)
+  const ref = useRef()
+
+  async function handleFile(file) {
+    const err = validateImage(file)
+    if (err) return alert(err)
+    setUploading(true)
+    try {
+      const url = await uploadFile(file, 'universe-wiki/lists')
+      onChange(url)
+    } catch { alert('Erro ao enviar.') }
+    setUploading(false)
+    if (ref.current) ref.current.value = ''
+  }
+
+  if (value) return (
+    <div className="relative w-10 h-10">
+      <img src={value} alt="" className="w-10 h-10 object-cover border border-wiki-border" />
+      <button type="button" onClick={() => onChange('')}
+        className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-wiki-red rounded-full flex items-center justify-center text-white">
+        <X size={8} />
+      </button>
+    </div>
+  )
+
+  return (
+    <label className="w-10 h-10 border border-dashed border-wiki-border flex items-center justify-center cursor-pointer hover:bg-wiki-silver/30 transition-colors flex-shrink-0">
+      {uploading ? <Loader size={10} className="animate-spin text-wiki-teal" /> : <Image size={10} className="text-wiki-text-muted" />}
+      <input ref={ref} type="file" accept="image/*" className="hidden"
+        onChange={e => { const f = e.target.files[0]; if (f) handleFile(f) }} />
+    </label>
+  )
+}
+
+// ─── Editor principal ─────────────────────────────────────
 export default function RichListEditor({ lists, onChange }) {
 
   function addList() {
-    onChange([...lists, { title: '', items: [] }])
+    if (lists.length >= MAX_LISTS) return
+    onChange([...lists, { title: '', columns: [], rows: [] }])
   }
 
   function removeList(li) {
     onChange(lists.filter((_, i) => i !== li))
   }
 
-  function updateListTitle(li, title) {
-    onChange(lists.map((l, i) => i === li ? { ...l, title } : l))
+  function updateList(li, field, value) {
+    onChange(lists.map((l, i) => i === li ? { ...l, [field]: value } : l))
   }
 
-  function addItem(li) {
-    if (lists[li].items.length >= MAX_ITEMS) return
+  function updateColumns(li, columns) {
+    // Quando colunas mudam, ajusta as linhas para terem o número certo de células
+    const rows = lists[li].rows.map(row => {
+      const cells = columns.map((_, ci) => row.cells?.[ci] ?? '')
+      return { ...row, cells }
+    })
+    onChange(lists.map((l, i) => i === li ? { ...l, columns, rows } : l))
+  }
+
+  function addRow(li) {
+    if (lists[li].rows.length >= MAX_ROWS) return
+    const cells = lists[li].columns.map(() => '')
     onChange(lists.map((l, i) => i === li
-      ? { ...l, items: [...l.items, { image: '', title: '', description: '' }] }
+      ? { ...l, rows: [...l.rows, { cells }] }
       : l))
   }
 
-  function removeItem(li, ii) {
+  function removeRow(li, ri) {
     onChange(lists.map((l, i) => i === li
-      ? { ...l, items: l.items.filter((_, j) => j !== ii) }
+      ? { ...l, rows: l.rows.filter((_, j) => j !== ri) }
       : l))
   }
 
-  function updateItem(li, ii, field, value) {
+  function updateCell(li, ri, ci, value) {
     onChange(lists.map((l, i) => i === li
-      ? { ...l, items: l.items.map((it, j) => j === ii ? { ...it, [field]: value } : it) }
+      ? {
+          ...l,
+          rows: l.rows.map((r, j) => j === ri
+            ? { ...r, cells: r.cells.map((c, k) => k === ci ? value : c) }
+            : r)
+        }
       : l))
   }
 
@@ -41,46 +153,95 @@ export default function RichListEditor({ lists, onChange }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <label className="text-xs font-bold text-wiki-text-muted uppercase tracking-wider">
-          Listas detalhadas
+          Tabelas / Listas detalhadas
         </label>
-        <button type="button" onClick={addList}
-          className="flex items-center gap-1 text-xs text-wiki-teal hover:underline font-medium">
-          <Plus size={12} /> Nova lista
+        <button type="button" onClick={addList} disabled={lists.length >= MAX_LISTS}
+          className="flex items-center gap-1 text-xs text-wiki-teal hover:underline font-medium disabled:opacity-40">
+          <Plus size={12} /> Nova tabela
         </button>
       </div>
 
       {lists.map((list, li) => (
-        <div key={li} className="border border-wiki-border bg-wiki-bg-sidebar">
-          <div className="flex items-center gap-2 p-2 border-b border-wiki-border bg-white">
+        <div key={li} className="border border-wiki-border">
+          {/* Header */}
+          <div className="flex items-center gap-2 p-2 border-b border-wiki-border bg-wiki-bg-sidebar">
             <input
               type="text"
               value={list.title}
-              onChange={e => updateListTitle(li, e.target.value)}
-              placeholder="Título da lista (ex: Estados membros)..."
-              className="flex-1 text-sm font-semibold border border-wiki-border px-2 py-1 text-wiki-charcoal focus:outline-none focus:border-wiki-navy"
+              onChange={e => updateList(li, 'title', e.target.value)}
+              placeholder="Título da tabela..."
+              className="flex-1 text-sm font-semibold border border-wiki-border px-2 py-1 text-wiki-charcoal focus:outline-none focus:border-wiki-navy bg-white"
             />
-            <button type="button" onClick={() => removeList(li)} className="text-wiki-red hover:opacity-80 flex-shrink-0">
+            <button type="button" onClick={() => removeList(li)} className="text-wiki-red hover:opacity-80">
               <Trash2 size={14} />
             </button>
           </div>
 
-          <div className="divide-y divide-wiki-border">
-            {list.items.map((item, ii) => (
-              <RichListItem
-                key={ii}
-                item={item}
-                index={ii}
-                onUpdate={(field, value) => updateItem(li, ii, field, value)}
-                onRemove={() => removeItem(li, ii)}
-              />
-            ))}
-          </div>
+          <div className="p-3 space-y-3 bg-white">
+            {/* Editor de colunas */}
+            <ColumnEditor
+              columns={list.columns}
+              onChange={cols => updateColumns(li, cols)}
+            />
 
-          <div className="p-2 border-t border-wiki-border">
-            <button type="button" onClick={() => addItem(li)} disabled={list.items.length >= MAX_ITEMS}
-              className="flex items-center gap-1 text-xs text-wiki-navy hover:underline font-medium disabled:opacity-40">
-              <Plus size={12} /> Adicionar item ({list.items.length}/{MAX_ITEMS})
-            </button>
+            {/* Linhas */}
+            {list.columns.length > 0 && (
+              <>
+                {/* Preview header */}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-xs min-w-max">
+                    <thead>
+                      <tr>
+                        <th className="bg-wiki-navy text-white px-2 py-1 border border-wiki-border w-8 text-center">#</th>
+                        {list.columns.map((col, ci) => (
+                          <th key={ci} className="bg-wiki-navy text-white px-2 py-1 border border-wiki-border text-left whitespace-nowrap">
+                            {col.name || `Coluna ${ci + 1}`}
+                            {col.type === 'image' && ' 🖼'}
+                          </th>
+                        ))}
+                        <th className="bg-wiki-navy text-white px-2 py-1 border border-wiki-border w-8"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {list.rows.map((row, ri) => (
+                        <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-wiki-bg-sidebar'}>
+                          <td className="border border-wiki-border px-2 py-1 text-center text-wiki-text-muted">{ri + 1}</td>
+                          {list.columns.map((col, ci) => (
+                            <td key={ci} className="border border-wiki-border px-1 py-1">
+                              {col.type === 'image' ? (
+                                <ImageCell
+                                  value={row.cells?.[ci] || ''}
+                                  onChange={val => updateCell(li, ri, ci, val)}
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={row.cells?.[ci] || ''}
+                                  onChange={e => updateCell(li, ri, ci, e.target.value)}
+                                  placeholder="..."
+                                  className="w-full text-xs px-1 py-0.5 focus:outline-none bg-transparent border-b border-transparent focus:border-wiki-navy min-w-20"
+                                />
+                              )}
+                            </td>
+                          ))}
+                          <td className="border border-wiki-border px-1 py-1 text-center">
+                            <button type="button" onClick={() => removeRow(li, ri)}
+                              className="text-wiki-text-muted hover:text-wiki-red">
+                              <Trash2 size={11} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <button type="button" onClick={() => addRow(li)} disabled={list.rows.length >= MAX_ROWS}
+                  className="flex items-center gap-1 text-xs text-wiki-navy hover:underline font-medium disabled:opacity-40">
+                  <Plus size={12} /> Adicionar linha ({list.rows.length}/{MAX_ROWS})
+                </button>
+              </>
+            )}
           </div>
         </div>
       ))}
@@ -88,97 +249,49 @@ export default function RichListEditor({ lists, onChange }) {
   )
 }
 
-function RichListItem({ item, index, onUpdate, onRemove }) {
-  const [uploading, setUploading] = useState(false)
-  const ref = useRef()
-
-  async function handleImage(file) {
-    const err = validateImage(file)
-    if (err) return alert(err)
-    setUploading(true)
-    try {
-      const url = await uploadFile(file, 'universe-wiki/lists')
-      onUpdate('image', url)
-    } catch { alert('Erro ao enviar imagem.') }
-    setUploading(false)
-    if (ref.current) ref.current.value = ''
-  }
-
-  return (
-    <div className="flex items-start gap-2 p-2 bg-white">
-      <span className="text-xs text-wiki-text-muted font-mono mt-2 w-5 flex-shrink-0">{index + 1}</span>
-
-      <div className="flex-shrink-0">
-        {item.image ? (
-          <div className="relative w-16 h-16">
-            <img src={item.image} alt="" className="w-16 h-16 object-cover border border-wiki-border" />
-            <button type="button" onClick={() => onUpdate('image', '')}
-              className="absolute -top-1 -right-1 w-4 h-4 bg-wiki-red rounded-full flex items-center justify-center text-white">
-              <X size={9} />
-            </button>
-          </div>
-        ) : (
-          <label className="w-16 h-16 border border-dashed border-wiki-border flex flex-col items-center justify-center cursor-pointer hover:bg-wiki-bg-sidebar transition-colors">
-            {uploading
-              ? <Loader size={14} className="animate-spin text-wiki-teal" />
-              : <Image size={14} className="text-wiki-text-muted" />
-            }
-            <span className="text-wiki-text-muted mt-0.5" style={{ fontSize: '9px' }}>
-              {uploading ? '...' : 'Foto'}
-            </span>
-            <input ref={ref} type="file" accept="image/*" className="hidden"
-              onChange={e => { const f = e.target.files[0]; if (f) handleImage(f) }} />
-          </label>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0 space-y-1">
-        <input type="text" value={item.title} onChange={e => onUpdate('title', e.target.value)}
-          placeholder="Título do item..."
-          className="w-full text-xs font-semibold border border-wiki-border px-2 py-1 text-wiki-charcoal focus:outline-none focus:border-wiki-navy" />
-        <textarea value={item.description} onChange={e => onUpdate('description', e.target.value)}
-          placeholder="Descrição (opcional)..."
-          rows={2}
-          className="w-full text-xs border border-wiki-border px-2 py-1 text-wiki-text focus:outline-none focus:border-wiki-navy resize-none" />
-      </div>
-
-      <button type="button" onClick={onRemove} className="text-wiki-text-muted hover:text-wiki-red flex-shrink-0 mt-1">
-        <Trash2 size={13} />
-      </button>
-    </div>
-  )
-}
-
+// ─── Renderizador no artigo ───────────────────────────────
 export function RichListRenderer({ lists }) {
   if (!lists?.length) return null
   return (
-    <div className="space-y-6 clear-both mt-4">
-      {lists.map((list, li) => (
-        <div key={li}>
-          {list.title && (
-            <h3 className="font-sans font-bold text-wiki-charcoal border-b border-wiki-border pb-1 mb-0 text-base">
-              {list.title}
-            </h3>
-          )}
-          <table className="w-full border-collapse text-sm">
-            <tbody>
-              {list.items?.map((item, ii) => (
-                <tr key={ii} className={ii % 2 === 0 ? 'bg-white' : 'bg-wiki-bg-sidebar'}>
-                  {item.image && (
-                    <td className="border border-wiki-border p-2 w-20 align-middle text-center">
-                      <img src={item.image} alt={item.title} className="w-16 h-16 object-cover mx-auto border border-wiki-border" />
-                    </td>
-                  )}
-                  <td className="border border-wiki-border p-2 align-top" colSpan={item.image ? 1 : 2}>
-                    {item.title && <p className="font-semibold text-wiki-charcoal">{item.title}</p>}
-                    {item.description && <p className="text-wiki-text-muted text-xs mt-0.5">{item.description}</p>}
-                  </td>
+    <div className="space-y-6 clear-both mt-6">
+      {lists.map((list, li) => {
+        if (!list.columns?.length) return null
+        return (
+          <div key={li} className="overflow-x-auto">
+            {list.title && (
+              <h3 className="font-sans font-bold text-wiki-charcoal border-b-2 border-wiki-navy pb-1 mb-0 text-base">
+                {list.title}
+              </h3>
+            )}
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr>
+                  {list.columns.map((col, ci) => (
+                    <th key={ci} className="bg-wiki-navy text-white px-3 py-2 border border-wiki-border text-left font-semibold whitespace-nowrap">
+                      {col.name || `Coluna ${ci + 1}`}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+              </thead>
+              <tbody>
+                {list.rows?.map((row, ri) => (
+                  <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-wiki-bg-sidebar'}>
+                    {list.columns.map((col, ci) => (
+                      <td key={ci} className="border border-wiki-border px-3 py-2 align-middle">
+                        {col.type === 'image' && row.cells?.[ci] ? (
+                          <img src={row.cells[ci]} alt="" className="h-8 w-auto object-contain" />
+                        ) : (
+                          <span>{row.cells?.[ci] || ''}</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      })}
     </div>
   )
 }
