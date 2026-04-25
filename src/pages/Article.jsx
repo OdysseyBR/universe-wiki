@@ -3,9 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
 import { parseWikiLinks } from '../lib/wikilink'
+import { getUniverseLabel } from '../lib/universes'
+import { RichListRenderer } from '../components/RichList'
 import { Pencil, Trash2, Clock, Music, ChevronRight, Printer, Globe } from 'lucide-react'
-import { getUniverseLabel, UNIVERSES } from '../lib/universes'
-import { InfoboxPreview } from '../components/InfoboxEditor'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -50,16 +50,46 @@ function TOC({ items }) {
   )
 }
 
+function InfoboxImages({ images }) {
+  const filled = (images || []).filter(Boolean)
+  if (filled.length === 0) return null
+
+  if (filled.length === 1) return (
+    <div className="infobox-image">
+      <img src={filled[0]} alt="" className="w-full" />
+    </div>
+  )
+
+  if (filled.length === 2) return (
+    <div className="infobox-image flex gap-1 p-1">
+      <img src={filled[0]} alt="" className="w-1/2 object-cover" />
+      <img src={filled[1]} alt="" className="w-1/2 object-cover" />
+    </div>
+  )
+
+  return (
+    <div className="infobox-image">
+      <div className="flex gap-1 p-1 pb-0">
+        <img src={filled[0]} alt="" className="w-1/2 object-cover max-h-28" />
+        <img src={filled[1]} alt="" className="w-1/2 object-cover max-h-28" />
+      </div>
+      <div className="p-1 pt-1">
+        <img src={filled[2]} alt="" className="w-full object-cover max-h-36" />
+      </div>
+    </div>
+  )
+}
+
 export default function Article() {
   const { id } = useParams()
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
-  const [article, setArticle] = useState(null)
+  const [article, setArticle]       = useState(null)
   const [allArticles, setAllArticles] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [deleting, setDeleting] = useState(false)
+  const [loading, setLoading]       = useState(true)
+  const [deleting, setDeleting]     = useState(false)
   const [parsedContent, setParsedContent] = useState('')
-  const [toc, setToc] = useState([])
+  const [toc, setToc]               = useState([])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -83,10 +113,6 @@ export default function Article() {
     navigate(-1)
   }
 
-  function handlePrint() {
-    window.print()
-  }
-
   if (loading) return (
     <div className="p-6 animate-pulse space-y-3">
       <div className="h-6 bg-wiki-silver/40 rounded w-1/3" />
@@ -104,6 +130,9 @@ export default function Article() {
 
   const catLabel = CATEGORY_LABELS[article.category] || article.category
   const catIcon  = CATEGORY_ICONS[article.category] || '📄'
+  const hasInfobox = (article.infoboxImages?.some(Boolean)) ||
+                     (article.infobox?.length > 0) ||
+                     article.infoboxAudio
 
   return (
     <div className="animate-fade-in">
@@ -115,7 +144,7 @@ export default function Article() {
         <ChevronRight size={11} />
         <span className="text-wiki-charcoal font-medium">{article.title}</span>
         <div className="ml-auto flex items-center gap-3">
-          <button onClick={handlePrint} className="flex items-center gap-1 text-wiki-text-muted hover:text-wiki-navy transition-colors">
+          <button onClick={() => window.print()} className="flex items-center gap-1 text-wiki-text-muted hover:text-wiki-navy transition-colors">
             <Printer size={11} /> Exportar PDF
           </button>
           {isAdmin && (
@@ -145,21 +174,20 @@ export default function Article() {
           {article.title}
         </h1>
 
+        {/* Meta */}
         <div className="flex items-center gap-3 text-xs text-wiki-text-muted mb-4 flex-wrap print:hidden">
           <span className="flex items-center gap-1">
             <span>{catIcon}</span>
             <Link to={`/category/${article.category}`} className="wiki-link">{catLabel}</Link>
           </span>
-          {article.universe && article.universe !== 'geral' && (
-            <span className="flex items-center gap-1 bg-wiki-teal/10 border border-wiki-teal/30 text-wiki-teal px-2 py-0.5 rounded font-semibold text-xs uppercase tracking-wide">
+          {article.universe && (
+            <span className={`flex items-center gap-1 px-2 py-0.5 rounded font-semibold text-xs uppercase tracking-wide border ${
+              article.universe === 'geral'
+                ? 'bg-wiki-navy/10 border-wiki-navy/20 text-wiki-navy'
+                : 'bg-wiki-teal/10 border-wiki-teal/30 text-wiki-teal'
+            }`}>
               <Globe size={10} />
               {getUniverseLabel(article.universe, article.universeVariant)}
-            </span>
-          )}
-          {article.universe === 'geral' && (
-            <span className="flex items-center gap-1 bg-wiki-navy/10 border border-wiki-navy/20 text-wiki-navy px-2 py-0.5 rounded font-semibold text-xs uppercase tracking-wide">
-              <Globe size={10} />
-              Universo Geral
             </span>
           )}
           {article.tags?.map(tag => (
@@ -173,27 +201,25 @@ export default function Article() {
           )}
         </div>
 
-        {/* Infobox lateral customizável */}
-        {(article.infobox?.length > 0 || article.imageUrl || article.images?.length > 0) && (
+        {/* Infobox lateral */}
+        {hasInfobox && (
           <div className="infobox">
             <div className="infobox-title">{article.title}</div>
-            {article.imageUrl && (
-              <div className="infobox-image">
-                <img src={article.imageUrl} alt={article.title} />
+
+            {/* Imagens: 1 grande / 2 lado a lado / 2 pequenas + 1 grande */}
+            <InfoboxImages images={article.infoboxImages} />
+
+            {/* Áudio */}
+            {article.infoboxAudio && (
+              <div className="border-t border-wiki-border px-2 py-2">
+                <p className="text-xs text-wiki-text-muted mb-1 flex items-center gap-1">
+                  <Music size={10} /> Áudio
+                </p>
+                <audio controls src={article.infoboxAudio} className="w-full" style={{ height: '28px' }} />
               </div>
             )}
-            {article.images?.length > 0 && (
-              <div className="divide-y divide-wiki-border">
-                {article.images.map((img, i) => (
-                  <div key={i}>
-                    <img src={img.url} alt={img.caption || ''} className="w-full" />
-                    {img.caption && (
-                      <p className="text-xs text-wiki-text-muted text-center px-2 py-1 italic">{img.caption}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+
+            {/* Linhas da infobox */}
             {article.infobox?.filter(r => r.label || r.value).length > 0 && (
               <table className="w-full text-xs">
                 <tbody>
@@ -213,9 +239,7 @@ export default function Article() {
                           {row.type === 'sub' && <span className="mr-1">•</span>}
                           {row.label}
                         </th>
-                        <td className="px-2 py-1 border border-wiki-border align-top">
-                          {row.value}
-                        </td>
+                        <td className="px-2 py-1 border border-wiki-border align-top">{row.value}</td>
                       </tr>
                     )
                   })}
@@ -225,37 +249,28 @@ export default function Article() {
           </div>
         )}
 
-        {/* Badge de universo */}
-        {article.universe && (
-          <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1.5 border border-wiki-navy/30 bg-wiki-navy/5 text-wiki-navy text-xs font-medium rounded">
-            <span>🌌</span>
-            {getUniverseLabel(article.universe)}
-          </div>
-        )}
-
+        {/* Resumo */}
         {article.summary && (
           <p className="text-sm text-wiki-text leading-relaxed mb-4 italic border-l-4 border-wiki-teal pl-3 bg-wiki-bg-infobox py-2 pr-3">
             {article.summary}
           </p>
         )}
 
+        {/* TOC */}
         <TOC items={toc} />
 
+        {/* Conteúdo */}
         <div
           className="wiki-content clearfix"
           dangerouslySetInnerHTML={{ __html: parsedContent || '<p class="text-wiki-text-muted italic">Sem conteúdo ainda.</p>' }}
         />
 
-        {article.audioUrl && (
-          <div className="mt-6 border border-wiki-border bg-wiki-bg-sidebar p-3 flex items-center gap-3 clear-both print:hidden">
-            <Music size={16} className="text-wiki-teal flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-1">Áudio</p>
-              <audio controls src={article.audioUrl} className="w-full h-8" style={{ height: '32px' }} />
-            </div>
-          </div>
+        {/* Listas detalhadas */}
+        {article.richLists?.length > 0 && (
+          <RichListRenderer lists={article.richLists} />
         )}
 
+        {/* Footer */}
         {article.createdAt?.toDate && (
           <div className="mt-8 pt-4 border-t border-wiki-border text-xs text-wiki-text-muted clear-both">
             Esta página foi criada em {format(article.createdAt.toDate(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}.
