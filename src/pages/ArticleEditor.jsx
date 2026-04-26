@@ -61,7 +61,7 @@ export default function ArticleEditor() {
           setSummary(data.summary || '')
           setCategory(data.category || 'characters')
           setTags((data.tags || []).join(', '))
-          setInfoboxImages(data.infoboxImages?.length === 3 ? data.infoboxImages : ['', '', ''])
+          setInfoboxImages(Array.isArray(data.infoboxImages) && data.infoboxImages.length === 3 ? data.infoboxImages : ['', '', ''])
           setInfoboxAudio(data.infoboxAudio || '')
           setInfobox(data.infobox || [])
           setRichLists(data.richLists || [])
@@ -85,8 +85,12 @@ export default function ArticleEditor() {
       content: editor?.getHTML() || '',
       infoboxImages,
       infoboxAudio: infoboxAudio || '',
-      infobox: infobox.filter(r => r.label?.trim() || r.value?.trim()),
-      richLists,
+      infobox: (infobox || []).filter(r => r?.label?.trim() || r?.value?.trim()),
+      richLists: (richLists || []).map(l => ({
+        ...l,
+        columns: l.columns || [],
+        rows: (l.rows || []).map(r => ({ ...r, cells: r.cells || [] }))
+      })),
       universe: universe || 'geral',
       universeVariant: universeVariant || '',
     }

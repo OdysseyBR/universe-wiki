@@ -116,25 +116,26 @@ export default function RichListEditor({ lists, onChange }) {
   }
 
   function updateColumns(li, columns) {
-    // Quando colunas mudam, ajusta as linhas para terem o número certo de células
-    const rows = lists[li].rows.map(row => {
-      const cells = columns.map((_, ci) => row.cells?.[ci] ?? '')
+    const rows = (lists[li].rows || []).map(row => {
+      const cells = columns.map((_, ci) => (row.cells || [])[ci] ?? '')
       return { ...row, cells }
     })
     onChange(lists.map((l, i) => i === li ? { ...l, columns, rows } : l))
   }
 
   function addRow(li) {
-    if (lists[li].rows.length >= MAX_ROWS) return
-    const cells = lists[li].columns.map(() => '')
+    const currentRows = lists[li].rows || []
+    const currentCols = lists[li].columns || []
+    if (currentRows.length >= MAX_ROWS) return
+    const cells = currentCols.map(() => '')
     onChange(lists.map((l, i) => i === li
-      ? { ...l, rows: [...l.rows, { cells }] }
+      ? { ...l, rows: [...(l.rows || []), { cells }] }
       : l))
   }
 
   function removeRow(li, ri) {
     onChange(lists.map((l, i) => i === li
-      ? { ...l, rows: l.rows.filter((_, j) => j !== ri) }
+      ? { ...l, rows: (l.rows || []).filter((_, j) => j !== ri) }
       : l))
   }
 
@@ -142,8 +143,8 @@ export default function RichListEditor({ lists, onChange }) {
     onChange(lists.map((l, i) => i === li
       ? {
           ...l,
-          rows: l.rows.map((r, j) => j === ri
-            ? { ...r, cells: r.cells.map((c, k) => k === ci ? value : c) }
+          rows: (l.rows || []).map((r, j) => j === ri
+            ? { ...r, cells: (r.cells || []).map((c, k) => k === ci ? value : c) }
             : r)
         }
       : l))
@@ -203,20 +204,20 @@ export default function RichListEditor({ lists, onChange }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {list.rows.map((row, ri) => (
+                      {(list.rows || []).map((row, ri) => (
                         <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-wiki-bg-sidebar'}>
                           <td className="border border-wiki-border px-2 py-1 text-center text-wiki-text-muted">{ri + 1}</td>
-                          {list.columns.map((col, ci) => (
+                          {(list.columns || []).map((col, ci) => (
                             <td key={ci} className="border border-wiki-border px-1 py-1">
                               {col.type === 'image' ? (
                                 <ImageCell
-                                  value={row.cells?.[ci] || ''}
+                                  value={(row.cells || [])[ci] || ''}
                                   onChange={val => updateCell(li, ri, ci, val)}
                                 />
                               ) : (
                                 <input
                                   type="text"
-                                  value={row.cells?.[ci] || ''}
+                                  value={(row.cells || [])[ci] || ''}
                                   onChange={e => updateCell(li, ri, ci, e.target.value)}
                                   placeholder="..."
                                   className="w-full text-xs px-1 py-0.5 focus:outline-none bg-transparent border-b border-transparent focus:border-wiki-navy min-w-20"
@@ -255,7 +256,9 @@ export function RichListRenderer({ lists }) {
   return (
     <div className="space-y-6 clear-both mt-6">
       {lists.map((list, li) => {
-        if (!list.columns?.length) return null
+        const columns = list.columns || []
+        const rows = list.rows || []
+        if (!columns.length) return null
         return (
           <div key={li} className="overflow-x-auto">
             {list.title && (
@@ -266,7 +269,7 @@ export function RichListRenderer({ lists }) {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr>
-                  {list.columns.map((col, ci) => (
+                  {columns.map((col, ci) => (
                     <th key={ci} className="bg-wiki-navy text-white px-3 py-2 border border-wiki-border text-left font-semibold whitespace-nowrap">
                       {col.name || `Coluna ${ci + 1}`}
                     </th>
@@ -274,19 +277,22 @@ export function RichListRenderer({ lists }) {
                 </tr>
               </thead>
               <tbody>
-                {list.rows?.map((row, ri) => (
-                  <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-wiki-bg-sidebar'}>
-                    {list.columns.map((col, ci) => (
-                      <td key={ci} className="border border-wiki-border px-3 py-2 align-middle">
-                        {col.type === 'image' && row.cells?.[ci] ? (
-                          <img src={row.cells[ci]} alt="" className="h-8 w-auto object-contain" />
-                        ) : (
-                          <span>{row.cells?.[ci] || ''}</span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {rows.map((row, ri) => {
+                  const cells = row.cells || []
+                  return (
+                    <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-wiki-bg-sidebar'}>
+                      {columns.map((col, ci) => (
+                        <td key={ci} className="border border-wiki-border px-3 py-2 align-middle">
+                          {col.type === 'image' && cells[ci] ? (
+                            <img src={cells[ci]} alt="" className="h-8 w-auto object-contain" />
+                          ) : (
+                            <span>{cells[ci] || ''}</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
