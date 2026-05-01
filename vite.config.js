@@ -7,6 +7,6 @@ export default defineConfig({
   preview: {
     port: process.env.PORT || 4173,
     host: true,
-    allowedHosts: ['https://focusverse.up.railway.app']
+    allowedHosts: ['focusverse.up.railway.app']
   }
 })
