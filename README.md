@@ -1,143 +1,58 @@
-# Universe Wiki — integração Focus Account
+# Correção: integração Focus Account adaptada para Vercel
 
-Login via Focus Account adicionado como **terceiro provedor**, ao lado do Google e
-GitHub já existentes. Mesma regra do lucasrafael.xyz: são três portas
-independentes — um login via Focus não funde com uma conta já existente via
-Google/GitHub, mesmo que o email seja o mesmo.
+A integração original foi pensada para um servidor Express tradicional
+(Railway). Como o deploy real da wiki é na **Vercel**, que não roda um
+processo Node continuamente — ela usa Serverless Functions — as 3 rotas de
+API precisaram ser reescritas no formato que a Vercel espera nativamente:
+arquivos `.js`/`.ts` dentro de uma pasta `/api` na raiz do projeto, cada um
+exportando um `default async function handler(req, res)`.
 
-## O que mudou
-
-**Antes**: a wiki só usava o Firebase Auth nativo (`onAuthStateChanged`), sem
-nenhum documento próprio de usuário no Firestore. `isAdmin` comparava
-`user.email` direto contra `VITE_ADMIN_EMAIL`.
-
-**Agora**: existe uma sessão paralela e própria para o login via Focus
-(JWT assinado pelo servidor da wiki, cookie httpOnly), porque o Focus Account
-não usa Firebase Custom Token de propósito — mesma decisão arquitetural do
-lucasrafael.xyz. O `AuthContext.jsx` unifica os dois mundos num único shape de
-usuário (`{ uid, displayName, email, photoURL, authProvider }`), então o resto
-do app (`Layout.jsx`, etc.) não precisou mudar nada.
-
-## Por que agora existe um servidor Express
-
-A troca de `code` por `access_token` (handshake OAuth) precisa rodar no
-backend — nunca no navegador, ou qualquer um no devtools poderia interceptar
-o processo. O projeto antes só rodava `vite preview` em produção (sem
-servidor de verdade). Agora `npm start` builda e roda `server/index.js`,
-que serve o build estático do Vite E expõe `/api/auth/focus/*`.
+## O que copiar para o repositório da wiki
 
 ```
-server/index.js        — servidor Express: serve dist/ + monta as rotas de API
-server/focusAuth.js     — troca code→token, cria/busca usuário no Firestore, sessão
-server/wikiSession.js   — assina/verifica o JWT próprio da wiki
-server/firebaseAdmin.js — inicialização do Firebase Admin SDK
+api/_lib/cookies.js          — parse/build de cookies (Vercel Functions não tem cookie-parser)
+api/_lib/firebaseAdmin.js    — idêntico ao server/firebaseAdmin.js original
+api/_lib/wikiSession.js      — idêntico ao server/wikiSession.js original
+api/auth/focus/exchange.js   — equivalente ao POST /api/auth/focus/exchange do Express
+api/auth/focus/me.js         — equivalente ao GET /api/auth/focus/me
+api/auth/focus/logout.js     — equivalente ao POST /api/auth/focus/logout
+vercel.json                  — garante que rotas que não começam com /api caem no index.html (SPA)
 ```
 
-```
-src/lib/focusOAuth.js     — PKCE + início do redirect (chamado pelo botão de login)
-src/pages/FocusCallback.jsx — recebe a volta do redirect, valida state, chama /exchange
-```
+A pasta `server/` (Express) **pode continuar existindo** no repositório — ela
+não interfere com o deploy na Vercel, e ainda é útil se você quiser testar
+localmente com `npm run dev:server` + `npm run dev`, como já validamos antes.
+A Vercel simplesmente ignora `server/` e usa `/api` em produção.
 
-## Configuração necessária
+## Bug real encontrado e corrigido nesta versão
 
-**Passo a passo recomendado, usando o script automático:**
+Os imports relativos (`../_lib/...`) nas funções de `api/auth/focus/*.js`
+estavam errados — apontavam para `api/auth/_lib/` (um nível acima), quando
+o `_lib` real está em `api/_lib/` (dois níveis acima). Corrigido para
+`../../_lib/...`. Isso foi pego rodando os handlers diretamente em Node antes
+de qualquer deploy, simulando o req/res que a Vercel passaria.
 
-1. No [console do Firebase](https://console.firebase.google.com), selecione o
-   projeto **da wiki** (não o do Focus Account) → Configurações do projeto →
-   Contas de serviço → Gerar nova chave privada → baixa o `.json`.
+## Configuração necessária na Vercel
 
-2. Rode (na raiz do projeto da wiki):
-   ```
-   node scripts/setup-env.cjs /caminho/para/o/arquivo-baixado.json
-   ```
-   Isso preenche `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL` e
-   `FIREBASE_ADMIN_PRIVATE_KEY` já formatados corretamente, e gera um
-   `WIKI_SESSION_JWT_SECRET` novo automaticamente (diferente do secret de
-   sessão do Focus Account — são domínios de confiança separados).
-   O script avisa se o `project_id` do arquivo parecer ser por engano o do
-   Focus Account em vez do da wiki.
+No painel do projeto (Settings → Environment Variables), adicione:
 
-3. Complete manualmente no `.env.local` o que o script não preenche (são sobre
-   o Focus Account, não sobre o Firebase da wiki):
-   ```
-   FOCUS_ACCOUNT_URL=https://accountsfocus.xyz
-   FOCUS_REDIRECT_URI=https://focusversewiki.xyz/auth/focus/callback
-   VITE_FOCUS_ACCOUNT_URL=https://accountsfocus.xyz
-   ```
-
-**Variáveis envolvidas, para referência:**
-
-No `.env` do servidor (Railway → Variables):
 ```
 FOCUS_ACCOUNT_URL=https://accountsfocus.xyz
 FOCUS_REDIRECT_URI=https://focusversewiki.xyz/auth/focus/callback
-WIKI_SESSION_JWT_SECRET=<gerar com: openssl rand -base64 32>
-FIREBASE_ADMIN_PROJECT_ID=<projeto Firebase DESTA wiki, não o do Focus Account>
+WIKI_SESSION_JWT_SECRET=<o mesmo que você já gerou localmente, ou um novo>
+FIREBASE_ADMIN_PROJECT_ID=<projeto Firebase DESTA wiki>
 FIREBASE_ADMIN_CLIENT_EMAIL=<...>
 FIREBASE_ADMIN_PRIVATE_KEY=<...>
-```
-
-No `.env.local` do Vite (build-time):
-```
 VITE_FOCUS_ACCOUNT_URL=https://accountsfocus.xyz
 ```
 
-**No projeto accounts-focus**, registre este client (uma vez só) rodando:
-```
-node scripts/register-oauth-client.js
-```
-(já vem pré-configurado para `client_id: "focusverse-wiki"` e
-`https://focusversewiki.xyz/auth/focus/callback` — edite o script se mudar
-o domínio ou quiser adicionar a URL de localhost para teste em dev)
+(as mesmas variáveis que você já tinha configurado para o teste local —
+reaproveite os mesmos valores, exceto as URLs que devem ser as de produção)
 
-## Estrutura de dados criada no Firestore desta wiki
+## Depois de configurar
 
-Documento novo em `users/{uid}` quando alguém loga via Focus por aqui:
-```js
-{
-  uid: "...",              // gerado pela wiki, NÃO é o focusId
-  authProvider: "focus",
-  focusId: "...",          // referência ao usuário no Focus Account
-  displayName: "...",
-  email: "...",
-  photoURL: "...",
-  createdAt: "...",
-  lastLoginAt: "...",
-}
-```
-Esse índice composto (`authProvider` + `focusId`) é usado para encontrar o
-usuário em logins de retorno — se aparecer erro de índice faltando no Firestore,
-o próprio erro traz o link para criar automaticamente no console.
-
-## Rodando localmente
-
-Em dev, o `npm run dev` do Vite (porta 5173) só serve o frontend — as rotas
-`/api/auth/focus/*` vivem no servidor Express, que precisa rodar em paralelo
-numa porta separada. O `vite.config.js` já tem um proxy configurado para
-mandar `/api/*` para `http://localhost:4000` automaticamente.
-
-**Terminal 1** — Focus Account (projeto separado):
-```
-cd accounts-focus
-npm run dev
-```
-
-**Terminal 2** — API da wiki (modo dev, só as rotas /api/*):
-```
-npm run dev:server
-```
-
-**Terminal 3** — frontend da wiki:
-```
-npm run dev
-```
-
-Acesse `http://localhost:5173/login` e clique em "Entrar com Focus".
-
-Para testar o fluxo completo como em produção (Express servindo o build
-inteiro, sem proxy do Vite):
-```
-npm run build
-npm run server
-```
-
+1. Faça commit e push destes arquivos para o repositório
+2. A Vercel deve redeployar automaticamente (ou force um redeploy manual)
+3. Acesse `focusversewiki.xyz/login` — o botão "Entrar com Focus" deve aparecer
+   (ele já existe no código desde a integração original; só não funcionava
+   porque as rotas de API não existiam no formato certo para a Vercel)
