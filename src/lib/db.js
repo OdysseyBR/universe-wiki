@@ -5,18 +5,20 @@ import {
 import { db } from './firebase'
 
 // ─── Categorias fixas (fallback) ─────────────────────────────────────────────
+// O campo `icon` guarda uma CHAVE de ícone (mapeada em lib/categoryIcons.js
+// para um componente lucide), não mais um emoji.
 
 export const DEFAULT_CATEGORIES = [
-  { id: 'characters', label: 'Personagens', icon: '👤' },
-  { id: 'stories',    label: 'Histórias',   icon: '📖' },
-  { id: 'geography',  label: 'Geografia',   icon: '🌍' },
-  { id: 'cities',     label: 'Cidades',     icon: '🏙️' },
-  { id: 'states',     label: 'Estados',     icon: '🗾' },
-  { id: 'countries',  label: 'Países',      icon: '🚩' },
-  { id: 'government', label: 'Governo',     icon: '🏛️' },
-  { id: 'companies',  label: 'Empresas',    icon: '🏢' },
-  { id: 'infrastructure', label: 'Infraestrutura', icon: '⚙️' },
-  { id: 'civilizations',  label: 'Civilizações',   icon: '🏺' },
+  { id: 'characters', label: 'Personagens', icon: 'users' },
+  { id: 'stories',    label: 'Histórias',   icon: 'book-open' },
+  { id: 'geography',  label: 'Geografia',   icon: 'globe' },
+  { id: 'cities',     label: 'Cidades',     icon: 'building-2' },
+  { id: 'states',     label: 'Estados',     icon: 'map' },
+  { id: 'countries',  label: 'Países',      icon: 'flag' },
+  { id: 'government', label: 'Governo',     icon: 'landmark' },
+  { id: 'companies',  label: 'Empresas',    icon: 'briefcase' },
+  { id: 'infrastructure', label: 'Infraestrutura', icon: 'cog' },
+  { id: 'civilizations',  label: 'Civilizações',   icon: 'castle' },
 ]
 
 // Mantidos para compatibilidade com código existente

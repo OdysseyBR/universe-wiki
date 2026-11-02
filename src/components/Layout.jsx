@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { subscribeToCategorias } from '../lib/db'
-import { Search, Plus, LogOut, LogIn, Menu, X, User, ChevronRight, Settings } from 'lucide-react'
+import { CategoryIcon } from '../lib/categoryIcons'
+import { Search, Plus, LogOut, LogIn, Menu, X, User, Settings } from 'lucide-react'
 
 export default function Layout() {
   const { user, isAdmin, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [categories, setCategories] = useState([])
+  const searchInputRef = useRef(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -16,53 +19,81 @@ export default function Layout() {
     return () => unsub()
   }, [])
 
+  // Ao abrir a busca, foca automaticamente no campo de digitação.
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [searchOpen])
+
   function handleSearch(e) {
     e.preventDefault()
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
       setSearchQuery('')
+      setSearchOpen(false)
       setSidebarOpen(false)
     }
+  }
+
+  function closeSearch() {
+    setSearchOpen(false)
+    setSearchQuery('')
   }
 
   return (
     <div className="min-h-screen flex flex-col">
 
       {/* Header */}
-      <header className="bg-wiki-navy border-b border-wiki-navy-dark print:hidden">
+      <header className="relative bg-wiki-navy border-b border-wiki-navy-dark print:hidden">
         <div className="max-w-screen-xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src="/logo.svg" alt="Focusverse" className="h-8 w-8 object-contain" />
-            <div className="flex flex-col leading-tight">
-              <span className="font-sans font-bold text-white text-sm tracking-wide">Universe Wiki</span>
-              <span className="font-sans text-wiki-gold text-xs tracking-widest">FOCUSVERSE</span>
-            </div>
-          </Link>
 
-          {/* Search */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md">
-            <div className="flex w-full">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Buscar no wiki... ou #tag"
-                className="flex-1 bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm px-3 py-1.5 rounded-l focus:outline-none focus:bg-white/20"
-              />
-              <button type="submit" className="bg-wiki-teal hover:bg-wiki-teal-light border border-wiki-teal-dark text-white text-sm px-3 py-1.5 rounded-r transition-colors">
-                <Search size={14} />
+          {/* Esquerda: menu mobile */}
+          <div className="flex items-center flex-shrink-0">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-white/80 hover:text-white">
+              <Menu size={20} />
+            </button>
+          </div>
+
+          {/* Direita: busca (lupa expansível) + usuário */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Busca */}
+            {searchOpen ? (
+              <form onSubmit={handleSearch} className="flex items-center">
+                <div className="flex">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Escape') closeSearch() }}
+                    placeholder="Buscar no wiki... ou #tag"
+                    className="w-40 sm:w-56 md:w-72 bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm px-3 py-1.5 rounded-l focus:outline-none focus:bg-white/20"
+                  />
+                  <button type="submit" className="bg-wiki-teal hover:bg-wiki-teal-light border border-wiki-teal-dark text-white text-sm px-3 py-1.5 rounded-r transition-colors">
+                    <Search size={14} />
+                  </button>
+                </div>
+                <button type="button" onClick={closeSearch} className="ml-1.5 text-white/60 hover:text-white transition-colors">
+                  <X size={16} />
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded transition-colors"
+                aria-label="Buscar"
+              >
+                <Search size={18} />
               </button>
-            </div>
-          </form>
+            )}
 
-          {/* User */}
-          <div className="flex items-center gap-2">
+            {/* Usuário */}
             {user ? (
               <div className="flex items-center gap-2">
                 {user.photoURL
                   ? <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full border border-white/30" />
-                  : <User size={14} className="text-white/70" />
+                  : <User size={16} className="text-white/70" />
                 }
                 <span className="text-white/80 text-xs hidden md:block">{user.displayName}</span>
                 {isAdmin && (
@@ -79,11 +110,13 @@ export default function Layout() {
                 <LogIn size={14} /> Entrar
               </Link>
             )}
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-white/80 hover:text-white ml-1">
-              <Menu size={20} />
-            </button>
           </div>
         </div>
+
+        {/* Logo centralizada (absoluta, para não ser empurrada pelos lados) */}
+        <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
+          <img src="/logo.svg" alt="Vaha Wiki" className="h-9 object-contain" />
+        </Link>
       </header>
 
       {/* Body */}
@@ -138,7 +171,7 @@ export default function Layout() {
                         }`
                       }
                     >
-                      <span className="text-base leading-none">{cat.icon}</span>
+                      <CategoryIcon name={cat.icon} size={16} className="flex-shrink-0" />
                       <span className="flex-1">{cat.label}</span>
                     </NavLink>
                     {isAdmin && cat.custom && (
@@ -193,8 +226,8 @@ export default function Layout() {
 
       <footer className="bg-wiki-bg-sidebar border-t border-wiki-border py-4 text-center print:hidden">
         <div className="flex items-center justify-center gap-2">
-          <img src="/logo.svg" alt="Focusverse" className="h-5 w-5 object-contain opacity-60" />
-          <p className="text-xs text-wiki-text-muted">Universe Wiki — Focusverse</p>
+          <img src="/logo-black.svg" alt="Vaha Wiki" className="h-5 object-contain opacity-60" />
+          <p className="text-xs text-wiki-text-muted">Vaha Wiki</p>
         </div>
       </footer>
     </div>

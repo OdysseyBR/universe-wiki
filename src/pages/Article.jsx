@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
+import { CategoryIcon } from '../lib/categoryIcons'
 import { parseWikiLinks } from '../lib/wikilink'
 import { getUniverseLabel } from '../lib/universes'
 import { RichListRenderer } from '../components/RichList'
@@ -129,7 +130,7 @@ export default function Article() {
   )
 
   const catLabel = CATEGORY_LABELS[article.category] || article.category
-  const catIcon  = CATEGORY_ICONS[article.category] || '📄'
+  const catIcon  = CATEGORY_ICONS[article.category] || 'scroll'
   const hasInfobox = (article.infoboxImages?.some(Boolean)) ||
                      (article.infobox?.length > 0) ||
                      article.infoboxAudio
@@ -163,9 +164,9 @@ export default function Article() {
       <div className="p-5 max-w-4xl">
         {/* Print header */}
         <div className="hidden print:flex items-center gap-2 mb-4 pb-3 border-b border-wiki-border">
-          <img src="/logo.svg" alt="Focusverse" className="h-8 w-8" />
+          <img src="/logo-black.svg" alt="Vaha Wiki" className="h-8 object-contain" />
           <div>
-            <p className="font-bold text-sm">Universe Wiki — Focusverse</p>
+            <p className="font-bold text-sm">Vaha Wiki</p>
             <p className="text-xs text-wiki-text-muted">{catLabel} · {article.title}</p>
           </div>
         </div>
@@ -177,7 +178,7 @@ export default function Article() {
         {/* Meta */}
         <div className="flex items-center gap-3 text-xs text-wiki-text-muted mb-4 flex-wrap print:hidden">
           <span className="flex items-center gap-1">
-            <span>{catIcon}</span>
+            <CategoryIcon name={catIcon} size={13} />
             <Link to={`/category/${article.category}`} className="wiki-link">{catLabel}</Link>
           </span>
           {article.universe && (

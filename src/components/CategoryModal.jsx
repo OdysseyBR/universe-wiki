@@ -1,18 +1,11 @@
 import { useState } from 'react'
 import { X, Plus } from 'lucide-react'
 import { createCategory } from '../lib/db'
-
-const ICON_OPTIONS = [
-  '📁','🌐','🗺️','🏔️','🌊','🌿','🔥','❄️','⚡','🌙','☀️','⭐',
-  '👑','🗡️','🛡️','⚔️','🏹','🔮','📜','📚','🔬','🧬','💊','🏗️',
-  '🚂','✈️','🚢','🏛️','🏰','🕌','⛪','🏟️','🏦','🏭','🌆','🌉',
-  '👥','🤝','💼','🎭','🎨','🎵','🏆','🎯','💡','🔑','🗝️','📡',
-  '💰','📈','⚙️','🔧','🛢️','⚛️','🧪','🌋','🏝️','🦁','🦅','🐉',
-]
+import { CategoryIcon, ICON_OPTIONS } from '../lib/categoryIcons'
 
 export default function CategoryModal({ onClose, onCreated }) {
   const [name, setName]   = useState('')
-  const [icon, setIcon]   = useState('📁')
+  const [icon, setIcon]   = useState('book-open')
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
@@ -56,21 +49,21 @@ export default function CategoryModal({ onClose, onCreated }) {
           {/* Ícone */}
           <div>
             <label className="block text-xs font-mono text-ink-500 uppercase tracking-wider mb-2">
-              Ícone — selecionado: <span className="text-base">{icon}</span>
+              Ícone — selecionado: <CategoryIcon name={icon} size={16} className="inline-flex align-middle" />
             </label>
             <div className="grid grid-cols-10 gap-1 max-h-40 overflow-y-auto bg-ink-800/50 rounded-xl p-2 border border-ink-700/30">
-              {ICON_OPTIONS.map(emoji => (
+              {ICON_OPTIONS.map(iconKey => (
                 <button
-                  key={emoji}
+                  key={iconKey}
                   type="button"
-                  onClick={() => setIcon(emoji)}
-                  className={`text-xl p-1.5 rounded-lg transition-all ${
-                    icon === emoji
+                  onClick={() => setIcon(iconKey)}
+                  className={`p-1.5 rounded-lg transition-all ${
+                    icon === iconKey
                       ? 'bg-amber-500/20 ring-1 ring-amber-500/50'
                       : 'hover:bg-ink-700/60'
                   }`}
                 >
-                  {emoji}
+                  <CategoryIcon name={iconKey} size={18} />
                 </button>
               ))}
             </div>
@@ -78,7 +71,7 @@ export default function CategoryModal({ onClose, onCreated }) {
 
           {/* Preview */}
           <div className="flex items-center gap-3 p-3 bg-ink-800/40 rounded-lg border border-ink-700/30">
-            <span className="text-xl">{icon}</span>
+            <CategoryIcon name={icon} size={20} />
             <span className="text-sm text-ink-300">{name || 'Nome da categoria'}</span>
           </div>
         </div>

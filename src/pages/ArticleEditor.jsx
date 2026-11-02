@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { createArticle, updateArticle, getArticle, subscribeToCategorias } from '../lib/db'
+import { CategoryIcon } from '../lib/categoryIcons'
 import CategoryModal from '../components/CategoryModal'
 import UniverseSelector from '../components/UniverseSelector'
 import InfoboxEditor from '../components/InfoboxEditor'
@@ -135,7 +136,7 @@ export default function ArticleEditor() {
                     ? 'bg-wiki-navy/10 border-wiki-navy/30 text-wiki-navy font-semibold'
                     : 'border-wiki-border text-wiki-text-muted hover:border-wiki-navy/30 hover:text-wiki-navy'
                 }`}>
-                {cat.icon} {cat.label}
+                <CategoryIcon name={cat.icon} size={14} /> {cat.label}
               </button>
             ))}
             <button type="button" onClick={() => setShowCatModal(true)}

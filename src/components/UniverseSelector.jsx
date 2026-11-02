@@ -7,7 +7,7 @@ export default function UniverseSelector({ value, variant, onChange, onVariantCh
     <div className="space-y-3">
       <div>
         <label className="block text-xs font-bold text-wiki-text-muted uppercase tracking-wider mb-2">
-          Universo Focusverse
+          Universo Vaha
         </label>
         <div className="flex flex-wrap gap-2">
           {UNIVERSES.map(u => (

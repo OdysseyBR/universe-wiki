@@ -4,16 +4,8 @@ import { subscribeToCategorias, DEFAULT_CATEGORIES } from '../lib/db'
 import { db } from '../lib/firebase'
 import { doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore'
 import { createCategory } from '../lib/db'
+import { CategoryIcon, ICON_OPTIONS } from '../lib/categoryIcons'
 import { Pencil, Trash2, Plus, Save, X, ChevronRight, Loader } from 'lucide-react'
-
-const ICON_OPTIONS = [
-  '📁','🌐','🗺️','🏔️','🌊','🌿','🔥','❄️','⚡','🌙','☀️','⭐',
-  '👑','🗡️','🛡️','⚔️','🏹','🔮','📜','📚','🔬','🧬','💊','🏗️',
-  '🚂','✈️','🚢','🏛️','🏰','🕌','⛪','🏟️','🏦','🏭','🌆','🌉',
-  '👥','🤝','💼','🎭','🎨','🎵','🏆','🎯','💡','🔑','🗝️','📡',
-  '💰','📈','⚙️','🔧','🛢️','⚛️','🧪','🌋','🏝️','🦁','🦅','🐉',
-  '👤','📖','🌍','🏙️','🗾','🚩','🏢','⚙️','🏺',
-]
 
 function EditRow({ cat, onSave, onDelete, onCancel }) {
   const [label, setLabel] = useState(cat.label)
@@ -38,12 +30,12 @@ async function handleSave(id, data) {
         <button onClick={onCancel} className="btn-wiki text-xs py-1.5"><X size={12} /></button>
       </div>
       <div>
-        <p className="text-xs text-wiki-text-muted mb-1">Ícone: <span className="text-base">{icon}</span></p>
+        <p className="text-xs text-wiki-text-muted mb-1">Ícone: <CategoryIcon name={icon} size={16} className="inline-flex align-middle" /></p>
         <div className="flex flex-wrap gap-1">
           {ICON_OPTIONS.map(e => (
             <button key={e} type="button" onClick={() => setIcon(e)}
-              className={`text-base p-1 rounded transition-all ${icon === e ? 'bg-wiki-navy/10 ring-1 ring-wiki-navy/30' : 'hover:bg-wiki-silver/40'}`}>
-              {e}
+              className={`p-1.5 rounded transition-all ${icon === e ? 'bg-wiki-navy/10 ring-1 ring-wiki-navy/30' : 'hover:bg-wiki-silver/40'}`}>
+              <CategoryIcon name={e} size={16} />
             </button>
           ))}
         </div>
@@ -57,7 +49,7 @@ export default function ManageCategories() {
   const [editingId, setEditingId]   = useState(null)
   const [showNew, setShowNew]       = useState(false)
   const [newLabel, setNewLabel]     = useState('')
-  const [newIcon, setNewIcon]       = useState('📁')
+  const [newIcon, setNewIcon]       = useState('book-open')
   const [saving, setSaving]         = useState(false)
 
   useEffect(() => {
@@ -81,7 +73,7 @@ export default function ManageCategories() {
     const id = newLabel.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     await createCategory({ id, label: newLabel.trim(), icon: newIcon, custom: true })
     setNewLabel('')
-    setNewIcon('📁')
+    setNewIcon('book-open')
     setShowNew(false)
     setSaving(false)
   }
@@ -124,12 +116,12 @@ export default function ManageCategories() {
                 <button onClick={() => setShowNew(false)} className="btn-wiki text-xs py-1.5"><X size={12} /></button>
               </div>
               <div>
-                <p className="text-xs text-wiki-text-muted mb-1">Ícone: <span className="text-base">{newIcon}</span></p>
+                <p className="text-xs text-wiki-text-muted mb-1">Ícone: <CategoryIcon name={newIcon} size={16} className="inline-flex align-middle" /></p>
                 <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                   {ICON_OPTIONS.map(e => (
                     <button key={e} type="button" onClick={() => setNewIcon(e)}
-                      className={`text-base p-1 rounded ${newIcon === e ? 'bg-wiki-navy/10 ring-1 ring-wiki-navy/30' : 'hover:bg-wiki-silver/40'}`}>
-                      {e}
+                      className={`p-1.5 rounded ${newIcon === e ? 'bg-wiki-navy/10 ring-1 ring-wiki-navy/30' : 'hover:bg-wiki-silver/40'}`}>
+                      <CategoryIcon name={e} size={16} />
                     </button>
                   ))}
                 </div>
@@ -151,7 +143,7 @@ export default function ManageCategories() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-wiki-bg-sidebar transition-colors">
-                      <span className="text-xl">{cat.icon}</span>
+                      <CategoryIcon name={cat.icon} size={18} className="flex-shrink-0" />
                       <span className="flex-1 text-sm font-medium text-wiki-charcoal">{cat.label}</span>
                       <div className="flex gap-1">
                         <button onClick={() => setEditingId(cat.id)} className="p-1.5 text-wiki-text-muted hover:text-wiki-teal transition-colors rounded hover:bg-wiki-silver/40">

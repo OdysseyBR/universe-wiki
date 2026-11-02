@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getRecentArticles, getAllCategories, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
+import { CategoryIcon } from '../lib/categoryIcons'
 import { Plus, Clock, ChevronRight, Globe } from 'lucide-react'
 import { getUniverseLabel } from '../lib/universes'
 import { formatDistanceToNow } from 'date-fns'
@@ -26,7 +27,7 @@ export default function Home() {
 
       {/* Title */}
       <div className="border-b border-wiki-border pb-3 mb-5">
-        <h1 className="text-2xl font-bold text-wiki-charcoal font-sans">Bem-vindo ao Universe Wiki</h1>
+        <h1 className="text-2xl font-bold text-wiki-charcoal font-sans">Bem-vindo ao Vaha Wiki</h1>
         <p className="text-sm text-wiki-text-muted mt-1">
           A enciclopédia do universo literário — {recent.length} artigos publicados
         </p>
@@ -68,7 +69,7 @@ export default function Home() {
                   return (
                     <li key={article.id} className={`flex items-start gap-2 py-2 text-sm ${i !== 0 ? 'border-t border-wiki-border/50' : ''}`}>
                       <span className="text-wiki-text-muted mt-0.5 flex-shrink-0">
-                        {CATEGORY_ICONS[article.category] || '📄'}
+                        <CategoryIcon name={CATEGORY_ICONS[article.category]} size={14} />
                       </span>
                       <div className="flex-1 min-w-0">
                         <Link to={`/article/${article.id}`} className="wiki-link font-medium">
@@ -109,7 +110,7 @@ export default function Home() {
                     to={`/category/${cat.id}`}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-wiki-link hover:bg-wiki-bg-sidebar transition-colors"
                   >
-                    <span>{cat.icon}</span>
+                    <CategoryIcon name={cat.icon} size={16} className="flex-shrink-0" />
                     <span>{cat.label}</span>
                     <ChevronRight size={12} className="ml-auto text-wiki-text-muted" />
                   </Link>

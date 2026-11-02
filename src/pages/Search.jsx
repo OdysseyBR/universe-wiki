@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { searchArticles, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
+import { CategoryIcon } from '../lib/categoryIcons'
 import { Search, Loader, ChevronRight } from 'lucide-react'
 
 export default function SearchPage() {
@@ -80,8 +81,9 @@ export default function SearchPage() {
                     {article.title}
                   </Link>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-wiki-text-muted text-xs">
-                      {CATEGORY_ICONS[article.category]} {CATEGORY_LABELS[article.category] || article.category}
+                    <span className="text-wiki-text-muted text-xs flex items-center gap-1">
+                      <CategoryIcon name={CATEGORY_ICONS[article.category]} size={12} />
+                      {CATEGORY_LABELS[article.category] || article.category}
                     </span>
                     {article.tags?.map(tag => (
                       <span key={tag} className={`category-tag ${isTagSearch && tag.toLowerCase().includes(searchTerm) ? 'bg-wiki-gold/20 border-wiki-gold/40 text-wiki-charcoal' : ''}`}>

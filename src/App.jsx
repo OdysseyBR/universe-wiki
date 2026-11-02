@@ -6,7 +6,6 @@ import Article from './pages/Article'
 import ArticleEditor from './pages/ArticleEditor'
 import Search from './pages/Search'
 import Login from './pages/Login'
-import FocusCallback from './pages/FocusCallback'
 import ManageCategories from './pages/ManageCategories'
 import { useAuth } from './contexts/AuthContext'
 
@@ -20,7 +19,6 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/auth/focus/callback" element={<FocusCallback />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="category/:cat" element={<Category />} />

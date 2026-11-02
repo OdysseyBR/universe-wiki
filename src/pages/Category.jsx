@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getArticlesByCategory, getAllCategories, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
+import { CategoryIcon } from '../lib/categoryIcons'
 import { Plus, ChevronRight, Clock, Globe } from 'lucide-react'
 import { getUniverseLabel } from '../lib/universes'
 import { formatDistanceToNow } from 'date-fns'
@@ -32,7 +33,7 @@ export default function Category() {
   if (!loading && !catInfo) return <Navigate to="/" replace />
 
   const label = catInfo?.label || cat
-  const icon  = catInfo?.icon || '📄'
+  const icon  = catInfo?.icon || 'scroll'
 
   return (
     <div className="animate-fade-in">
@@ -50,7 +51,7 @@ export default function Category() {
 
       <div className="p-5 max-w-4xl">
         <h1 className="text-2xl font-bold text-wiki-charcoal font-sans pb-2 border-b border-wiki-border mb-4 flex items-center gap-2">
-          <span>{icon}</span> {label}
+          <CategoryIcon name={icon} size={24} /> {label}
         </h1>
 
         <p className="text-sm text-wiki-text-muted mb-5 italic">
