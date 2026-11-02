@@ -1,5 +1,11 @@
 node_modules
 dist
-.env.local
-.env
 .DS_Store
+
+# secrets / ambiente
+.env
+.env.*
+!.env.example
+
+# Vercel CLI
+.vercel
