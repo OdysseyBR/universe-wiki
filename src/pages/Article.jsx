@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getArticle, deleteArticle, getAllArticles, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/db'
 import { CategoryIcon } from '../lib/categoryIcons'
 import { parseWikiLinks } from '../lib/wikilink'
-import { getUniverseLabel } from '../lib/universes'
+import { getUniverseLabel, useUniverses } from '../lib/universes'
 import { RichListRenderer } from '../components/RichList'
 import { Pencil, Trash2, Clock, Music, ChevronRight, Printer, Globe } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
@@ -91,6 +91,7 @@ export default function Article() {
   const [deleting, setDeleting]     = useState(false)
   const [parsedContent, setParsedContent] = useState('')
   const [toc, setToc]               = useState([])
+  const universes = useUniverses()
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -131,6 +132,7 @@ export default function Article() {
 
   const catLabel = CATEGORY_LABELS[article.category] || article.category
   const catIcon  = CATEGORY_ICONS[article.category] || 'scroll'
+  const universeLabel = getUniverseLabel(article.universe, universes)
   const hasInfobox = (article.infoboxImages?.some(Boolean)) ||
                      (article.infobox?.length > 0) ||
                      article.infoboxAudio
@@ -181,14 +183,14 @@ export default function Article() {
             <CategoryIcon name={catIcon} size={13} />
             <Link to={`/category/${article.category}`} className="wiki-link">{catLabel}</Link>
           </span>
-          {article.universe && (
+          {universeLabel && (
             <span className={`flex items-center gap-1 px-2 py-0.5 rounded font-semibold text-xs uppercase tracking-wide border ${
               article.universe === 'geral'
                 ? 'bg-wiki-navy/10 border-wiki-navy/20 text-wiki-navy'
                 : 'bg-wiki-teal/10 border-wiki-teal/30 text-wiki-teal'
             }`}>
               <Globe size={10} />
-              {getUniverseLabel(article.universe, article.universeVariant)}
+              {universeLabel}
             </span>
           )}
           {article.tags?.map(tag => (

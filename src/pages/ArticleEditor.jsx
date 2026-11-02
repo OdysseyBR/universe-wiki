@@ -35,7 +35,6 @@ export default function ArticleEditor() {
   const [infobox, setInfobox]                 = useState([])
   const [richLists, setRichLists]             = useState([])
   const [universe, setUniverse]               = useState('geral')
-  const [universeVariant, setUniverseVariant] = useState('')
   const [saving, setSaving]                   = useState(false)
   const [loading, setLoading]                 = useState(isEditing)
   const [categories, setCategories]           = useState([])
@@ -67,7 +66,6 @@ export default function ArticleEditor() {
           setInfobox(data.infobox || [])
           setRichLists(data.richLists || [])
           setUniverse(data.universe || 'geral')
-          setUniverseVariant(data.universeVariant || '')
           editor.commands.setContent(data.content || '')
         }
         setLoading(false)
@@ -93,7 +91,6 @@ export default function ArticleEditor() {
         rows: (l.rows || []).map(r => ({ ...r, cells: r.cells || [] }))
       })),
       universe: universe || 'geral',
-      universeVariant: universeVariant || '',
     }
     try {
       if (isEditing) { await updateArticle(id, data); navigate(`/article/${id}`) }
@@ -149,9 +146,7 @@ export default function ArticleEditor() {
         {/* Universo */}
         <UniverseSelector
           value={universe}
-          variant={universeVariant}
           onChange={setUniverse}
-          onVariantChange={setUniverseVariant}
         />
 
         {/* Título */}

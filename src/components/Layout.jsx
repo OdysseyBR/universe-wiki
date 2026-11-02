@@ -201,6 +201,12 @@ export default function Layout() {
                       <Settings size={13} /> Gerir categorias
                     </Link>
                   </li>
+                  <li>
+                    <Link to="/manage-universes" onClick={() => setSidebarOpen(false)}
+                      className="flex items-center gap-2 px-2 py-1.5 text-sm text-wiki-teal hover:bg-wiki-silver/40 rounded transition-colors font-medium">
+                      <Settings size={13} /> Gerir universos
+                    </Link>
+                  </li>
                 </ul>
               </div>
             )}
